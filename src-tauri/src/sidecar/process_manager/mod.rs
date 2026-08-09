@@ -88,3 +88,86 @@ pub async fn run_python_agent(
         Err(format!("Python process exited with failure status: {:?}", status.code()))
     }
 }
+
+pub async fn run_email_agent(
+    app: AppHandle,
+    server: &str,
+    email_address: &str,
+    password: &str,
+    filter_type: &str,
+) -> Result<String, String> {
+    let mut script_path = PathBuf::from(".");
+    script_path.push("sidecars");
+    script_path.push("email_agent");
+    script_path.push("fetch_emails.py");
+    
+    if !script_path.exists() {
+        script_path = PathBuf::from("..");
+        script_path.push("sidecars");
+        script_path.push("email_agent");
+        script_path.push("fetch_emails.py");
+    }
+
+    if !script_path.exists() {
+        script_path = PathBuf::from("/Users/sadid/Works/projects/echo-ai/sidecars/email_agent/fetch_emails.py");
+    }
+
+    let script_str = script_path.to_string_lossy().to_string();
+    
+    let mut child = Command::new("python3")
+        .arg(&script_str)
+        .arg("--server")
+        .arg(server)
+        .arg("--email")
+        .arg(email_address)
+        .arg("--password")
+        .arg(password)
+        .arg("--filter")
+        .arg(filter_type)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start Python email sidecar: {}", e))?;
+
+    let stdout = child.stdout.take().ok_or("Failed to open stdout pipe")?;
+    let stderr = child.stderr.take().ok_or("Failed to open stderr pipe")?;
+    
+    let mut reader = BufReader::new(stdout).lines();
+    let mut err_reader = BufReader::new(stderr).lines();
+    
+    let app_clone = app.clone();
+    tokio::spawn(async move {
+        while let Ok(Some(line)) = err_reader.next_line().await {
+            let log_msg = format!("[Python Email Err] {}", line);
+            let _ = app_clone.emit("sidecar-log", log_msg);
+        }
+    });
+
+    let mut final_output = String::new();
+    let mut last_json = String::new();
+
+    while let Ok(Some(line)) = reader.next_line().await {
+        let log_msg = format!("[Python Email] {}", line);
+        let _ = app.emit("sidecar-log", log_msg);
+
+        final_output.push_str(&line);
+        final_output.push('\n');
+
+        if line.trim().starts_with('{') && line.trim().ends_with('}') {
+            last_json = line.clone();
+        }
+    }
+
+    let status = child.wait().await.map_err(|e| format!("Failed to wait on child: {}", e))?;
+    
+    if status.success() {
+        if !last_json.is_empty() {
+            Ok(last_json)
+        } else {
+            Ok(final_output)
+        }
+    } else {
+        Err(format!("Python email process exited with failure status: {:?}", status.code()))
+    }
+}
+

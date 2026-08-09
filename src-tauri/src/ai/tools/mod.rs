@@ -2,7 +2,8 @@ use crate::ai::providers::ToolDefinition;
 use crate::system::{file_system, terminal};
 use crate::sidecar::process_manager;
 use serde_json::{json, Value};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
+use crate::ai::orchestrator::AppState;
 
 pub fn get_available_tools() -> Vec<ToolDefinition> {
     vec![
@@ -84,6 +85,20 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
                 "required": ["url", "query"]
             }),
         },
+        ToolDefinition {
+            name: "fetch_emails".to_string(),
+            description: "Fetch unread or starred/important emails from the inbox".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "filter_type": {
+                        "type": "string",
+                        "description": "Email filter ('UNSEEN' for unread emails, 'FLAGGED' for important/starred/flagged emails, 'ALL' for recent emails)"
+                    }
+                },
+                "required": ["filter_type"]
+            }),
+        },
     ]
 }
 
@@ -122,6 +137,15 @@ pub async fn execute_tool(
             let url = args_val["url"].as_str().ok_or("Missing 'url' argument")?;
             let query = args_val["query"].as_str().ok_or("Missing 'query' argument")?;
             process_manager::run_python_agent(app, url, query).await
+        }
+        "fetch_emails" => {
+            let filter_type = args_val["filter_type"].as_str().unwrap_or("UNSEEN");
+            let state = app.state::<AppState>();
+            let config = state.config.lock().unwrap().clone();
+            let server = config.email.imap_server;
+            let email_addr = config.email.email_address;
+            let pwd = config.email.app_password;
+            process_manager::run_email_agent(app, &server, &email_addr, &pwd, filter_type).await
         }
         _ => Err(format!("Unknown tool: {}", name)),
     }

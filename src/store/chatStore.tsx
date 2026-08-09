@@ -9,12 +9,19 @@ export interface ApiKeys {
   local_url: string;
 }
 
+export interface EmailConfig {
+  imap_server: string;
+  email_address: string;
+  app_password: string;
+}
+
 export interface AppConfig {
   active_model: string;
   api_keys: ApiKeys;
   system_prompt: string;
   ai_name: string;
   user_name: string;
+  email: EmailConfig;
 }
 
 export interface Message {
@@ -54,8 +61,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshConfig = async () => {
     try {
-      const cfg = await invoke<AppConfig>("get_config");
-      setConfig(cfg);
+      const saved = localStorage.getItem("echo_ai_config");
+      if (saved) {
+        const parsed: AppConfig = JSON.parse(saved);
+        setConfig(parsed);
+        await invoke("update_config", { config: parsed });
+        addLog("Synced settings from local storage.");
+      } else {
+        const cfg = await invoke<AppConfig>("get_config");
+        setConfig(cfg);
+        localStorage.setItem("echo_ai_config", JSON.stringify(cfg));
+      }
     } catch (err) {
       addLog(`Failed to fetch settings config: ${err}`);
     }
@@ -77,7 +93,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     try {
       await invoke("update_config", { config: newConfig });
       setConfig(newConfig);
-      addLog(`AI Model Swapped to: ${newConfig.active_model}`);
+      localStorage.setItem("echo_ai_config", JSON.stringify(newConfig));
+      addLog(`AI Configuration saved to local storage.`);
     } catch (err) {
       addLog(`Failed to update config: ${err}`);
       throw err;

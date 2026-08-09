@@ -15,6 +15,9 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
   const [sysPrompt, setSysPrompt] = useState("");
   const [aiName, setAiName] = useState("");
   const [userName, setUserName] = useState("");
+  const [imapServer, setImapServer] = useState("imap.gmail.com");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [appPassword, setAppPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -27,6 +30,11 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
       setSysPrompt(config.system_prompt);
       setAiName(config.ai_name);
       setUserName(config.user_name);
+      if (config.email) {
+        setImapServer(config.email.imap_server);
+        setEmailAddress(config.email.email_address);
+        setAppPassword(config.email.app_password);
+      }
     }
   }, [config]);
 
@@ -43,6 +51,11 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
       system_prompt: sysPrompt,
       ai_name: aiName,
       user_name: userName,
+      email: {
+        imap_server: imapServer,
+        email_address: emailAddress,
+        app_password: appPassword,
+      },
     };
 
     try {
@@ -69,7 +82,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
               <label>Active Provider</label>
               <select
                 value={model}
-                onChange={(e) => setModel(e.currentTarget.value)}
+                onChange={(e: React.ChangeEvent<any>) => setModel(e.currentTarget.value)}
               >
                 <option value="Local">Local / Ollama (Offline Simulation fallback)</option>
                 <option value="Gemini">Gemini 1.5 Flash (Google)</option>
@@ -87,7 +100,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <input
                   type="password"
                   value={geminiKey}
-                  onChange={(e) => setGeminiKey(e.currentTarget.value)}
+                  onChange={(e: React.ChangeEvent<any>) => setGeminiKey(e.currentTarget.value)}
                   placeholder="AIzaSy..."
                 />
               </div>
@@ -98,7 +111,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <input
                   type="password"
                   value={openaiKey}
-                  onChange={(e) => setOpenaiKey(e.currentTarget.value)}
+                  onChange={(e: React.ChangeEvent<any>) => setOpenaiKey(e.currentTarget.value)}
                   placeholder="sk-proj-..."
                 />
               </div>
@@ -109,7 +122,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <input
                   type="password"
                   value={claudeKey}
-                  onChange={(e) => setClaudeKey(e.currentTarget.value)}
+                  onChange={(e: React.ChangeEvent<any>) => setClaudeKey(e.currentTarget.value)}
                   placeholder="sk-ant-..."
                 />
               </div>
@@ -120,11 +133,44 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <input
                   type="text"
                   value={localUrl}
-                  onChange={(e) => setLocalUrl(e.currentTarget.value)}
+                  onChange={(e: React.ChangeEvent<any>) => setLocalUrl(e.currentTarget.value)}
                   placeholder="http://localhost:11434"
                 />
               </div>
             )}
+          </div>
+
+          <div className="settings-section">
+            <h4>Email Configuration</h4>
+            <div className="input-field">
+              <label>IMAP Mail Server</label>
+              <input
+                type="text"
+                value={imapServer}
+                onChange={(e: React.ChangeEvent<any>) => setImapServer(e.currentTarget.value)}
+                placeholder="imap.gmail.com"
+              />
+            </div>
+            <div className="input-grid">
+              <div className="input-field">
+                <label>Email Address</label>
+                <input
+                  type="text"
+                  value={emailAddress}
+                  onChange={(e: React.ChangeEvent<any>) => setEmailAddress(e.currentTarget.value)}
+                  placeholder="example@gmail.com"
+                />
+              </div>
+              <div className="input-field">
+                <label>App Password</label>
+                <input
+                  type="password"
+                  value={appPassword}
+                  onChange={(e: React.ChangeEvent<any>) => setAppPassword(e.currentTarget.value)}
+                  placeholder="xxxx xxxx xxxx xxxx"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="settings-section">
@@ -135,7 +181,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <input
                   type="text"
                   value={userName}
-                  onChange={(e) => setUserName(e.currentTarget.value)}
+                  onChange={(e: React.ChangeEvent<any>) => setUserName(e.currentTarget.value)}
                 />
               </div>
               <div className="input-field">
@@ -143,7 +189,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <input
                   type="text"
                   value={aiName}
-                  onChange={(e) => setAiName(e.currentTarget.value)}
+                  onChange={(e: React.ChangeEvent<any>) => setAiName(e.currentTarget.value)}
                 />
               </div>
             </div>
@@ -151,7 +197,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
               <label>Global System Prompt</label>
               <textarea
                 value={sysPrompt}
-                onChange={(e) => setSysPrompt(e.currentTarget.value)}
+                onChange={(e: React.ChangeEvent<any>) => setSysPrompt(e.currentTarget.value)}
                 rows={4}
               />
             </div>
