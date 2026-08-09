@@ -4,10 +4,12 @@ import { ChatLog } from "./components/ChatLog";
 import { CommandInput } from "./components/CommandInput";
 import { TerminalOutput } from "./components/TerminalOutput";
 import { SettingsModal } from "./components/SettingsModal";
+import { VoiceOverlay } from "./components/VoiceOverlay";
 import "./App.css";
 
 function Workspace() {
   const [showSettings, setShowSettings] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
   const { config } = useChatStore();
 
   return (
@@ -38,10 +40,11 @@ function Workspace() {
         <ChatLog />
       </main>
       <footer className="workspace-controls">
-        <CommandInput />
+        <CommandInput onVoiceClick={() => setShowVoice(true)} />
         <TerminalOutput />
       </footer>
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} />}
     </div>
   );
 }
