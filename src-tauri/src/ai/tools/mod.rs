@@ -69,20 +69,39 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "run_browser_agent".to_string(),
-            description: "Run the Python sidecar automation browser to crawl and scrape web pages".to_string(),
+            description: "Run the Python sidecar automation browser to crawl, click links/tabs, type text, wait, and scroll web pages".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "url": {
                         "type": "string",
-                        "description": "The initial URL to visit"
+                        "description": "The initial URL to visit (optional if steps are provided)"
                     },
                     "query": {
                         "type": "string",
-                        "description": "The search query or extraction objective for the browser"
+                        "description": "Search or extraction query (optional if steps are provided)"
+                    },
+                    "steps": {
+                        "type": "array",
+                        "description": "Optional list of step-by-step interactive actions to execute. Example: [{\"action\": \"navigate\", \"url\": \"https://www.facebook.com\"}, {\"action\": \"wait\", \"seconds\": 3}, {\"action\": \"click\", \"selector\": \"text=Reels\"}, {\"action\": \"scroll\", \"direction\": \"down\", \"count\": 2}, {\"action\": \"extract\"}]",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "action": {
+                                    "type": "string",
+                                    "description": "The type of action: 'navigate', 'click' (by CSS class or text like 'text=Reels'), 'type' (inputs text), 'scroll' (down/up), 'wait' (seconds), 'extract' (webpage text)"
+                                },
+                                "url": { "type": "string" },
+                                "selector": { "type": "string" },
+                                "text": { "type": "string" },
+                                "direction": { "type": "string" },
+                                "count": { "type": "integer" },
+                                "seconds": { "type": "integer" }
+                            },
+                            "required": ["action"]
+                        }
                     }
-                },
-                "required": ["url", "query"]
+                }
             }),
         },
         ToolDefinition {
@@ -134,9 +153,17 @@ pub async fn execute_tool(
             terminal::execute_command(command).await
         }
         "run_browser_agent" => {
-            let url = args_val["url"].as_str().ok_or("Missing 'url' argument")?;
-            let query = args_val["query"].as_str().ok_or("Missing 'query' argument")?;
-            process_manager::run_python_agent(app, url, query).await
+            let url = args_val["url"].as_str().unwrap_or("");
+            let query = args_val["query"].as_str().unwrap_or("");
+            let steps_arr = args_val["steps"].as_array();
+            
+            let steps_str = if let Some(arr) = steps_arr {
+                serde_json::to_string(arr).unwrap_or_default()
+            } else {
+                "".to_string()
+            };
+            
+            process_manager::run_python_agent(app, url, query, &steps_str).await
         }
         "fetch_emails" => {
             let filter_type = args_val["filter_type"].as_str().unwrap_or("UNSEEN");

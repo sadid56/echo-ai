@@ -8,6 +8,7 @@ pub async fn run_python_agent(
     app: AppHandle,
     url: &str,
     query: &str,
+    steps: &str,
 ) -> Result<String, String> {
     // Find the python sidecar script path
     let mut script_path = PathBuf::from(".");
@@ -30,12 +31,20 @@ pub async fn run_python_agent(
 
     let script_str = script_path.to_string_lossy().to_string();
     
-    let mut child = Command::new("python3")
-        .arg(&script_str)
-        .arg("--url")
-        .arg(url)
-        .arg("--query")
-        .arg(query)
+    let mut cmd = Command::new("python3");
+    cmd.arg(&script_str);
+    
+    if !steps.is_empty() {
+        cmd.arg("--steps").arg(steps);
+    }
+    if !url.is_empty() {
+        cmd.arg("--url").arg(url);
+    }
+    if !query.is_empty() {
+        cmd.arg("--query").arg(query);
+    }
+
+    let mut child = cmd
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -73,6 +82,7 @@ pub async fn run_python_agent(
         // Check if the line is a JSON result (often at the end)
         if line.trim().starts_with('{') && line.trim().ends_with('}') {
             last_json = line.clone();
+            return Ok(last_json);
         }
     }
 

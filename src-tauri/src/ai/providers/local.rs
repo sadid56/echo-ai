@@ -10,27 +10,53 @@ impl AiProvider for LocalProvider {
         &self,
         prompt: &str,
         history: &[Message],
-        _tools: &[ToolDefinition],
+        tools: &[ToolDefinition],
         api_key: &str,
     ) -> Result<ProviderResponse, String> {
-        let base_url = if api_key.is_empty() { "http://localhost:11434" } else { api_key };
+        let (base_url, model_name) = if api_key.contains('|') {
+            let parts: Vec<&str> = api_key.split('|').collect();
+            (parts[0], parts[1])
+        } else {
+            let base = if api_key.is_empty() { "http://localhost:11434" } else { api_key };
+            (base, "llama3")
+        };
         let url = format!("{}/v1/chat/completions", base_url.trim_end_matches('/'));
 
         let mut messages = Vec::new();
         for msg in history {
             let role = match msg.role {
-                Role::System => "system",
-                Role::User => "user",
-                Role::Assistant => "assistant",
-                Role::Tool => "tool",
+                Role::System => "system".to_string(),
+                Role::User => "user".to_string(),
+                Role::Assistant => "assistant".to_string(),
+                Role::Tool => "tool".to_string(),
             };
+
             let mut msg_obj = json!({
                 "role": role,
                 "content": msg.content
             });
+
             if msg.role == Role::Tool {
-                msg_obj["tool_call_id"] = json!(msg.name.clone().unwrap_or_default());
+                let tc_id = msg.name.clone().unwrap_or_else(|| "unknown".to_string());
+                msg_obj["tool_call_id"] = json!(tc_id);
             }
+
+            if let Some(tool_calls) = &msg.tool_calls {
+                let mut tc_arr = Vec::new();
+                for tc in tool_calls {
+                    let args: Value = serde_json::from_str(&tc.arguments).unwrap_or_else(|_| json!({}));
+                    tc_arr.push(json!({
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.name,
+                            "arguments": serde_json::to_string(&args).unwrap_or_default()
+                        }
+                    }));
+                }
+                msg_obj["tool_calls"] = json!(tc_arr);
+            }
+
             messages.push(msg_obj);
         }
 
@@ -41,14 +67,29 @@ impl AiProvider for LocalProvider {
             }));
         }
 
-        let body = json!({
-            "model": "llama3",
+        let mut body = json!({
+            "model": model_name,
             "messages": messages,
             "stream": false
         });
 
+        if !tools.is_empty() {
+            let mut tool_arr = Vec::new();
+            for t in tools {
+                tool_arr.push(json!({
+                    "type": "function",
+                    "function": {
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": t.parameters
+                    }
+                }));
+            }
+            body["tools"] = json!(tool_arr);
+        }
+
         let client = Client::builder()
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(60))
             .build()
             .map_err(|e| e.to_string())?;
 

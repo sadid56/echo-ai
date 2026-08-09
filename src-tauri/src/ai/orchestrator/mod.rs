@@ -81,7 +81,9 @@ impl Orchestrator {
                 }
                 "Local" | _ => {
                     let url = config.api_keys.local_url.clone();
-                    LocalProvider.generate_response(&current_prompt, &history, &available_tools, &url).await?
+                    let model = config.api_keys.local_model.clone();
+                    let payload = format!("{}|{}", url, model);
+                    LocalProvider.generate_response(&current_prompt, &history, &available_tools, &payload).await?
                 }
             };
 

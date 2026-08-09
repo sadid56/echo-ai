@@ -12,6 +12,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
   const [openaiKey, setOpenaiKey] = useState("");
   const [claudeKey, setClaudeKey] = useState("");
   const [localUrl, setLocalUrl] = useState("");
+  const [localModel, setLocalModel] = useState("llama3-groq-tool-use");
   const [sysPrompt, setSysPrompt] = useState("");
   const [aiName, setAiName] = useState("");
   const [userName, setUserName] = useState("");
@@ -27,6 +28,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
       setOpenaiKey(config.api_keys.openai);
       setClaudeKey(config.api_keys.claude);
       setLocalUrl(config.api_keys.local_url);
+      setLocalModel(config.api_keys.local_model || "llama3-groq-tool-use");
       setSysPrompt(config.system_prompt);
       setAiName(config.ai_name);
       setUserName(config.user_name);
@@ -47,6 +49,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
         openai: openaiKey,
         claude: claudeKey,
         local_url: localUrl,
+        local_model: localModel,
       },
       system_prompt: sysPrompt,
       ai_name: aiName,
@@ -128,14 +131,25 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
               </div>
             )}
             {model === "Local" && (
-              <div className="input-field">
-                <label>Ollama Server URL</label>
-                <input
-                  type="text"
-                  value={localUrl}
-                  onChange={(e: React.ChangeEvent<any>) => setLocalUrl(e.currentTarget.value)}
-                  placeholder="http://localhost:11434"
-                />
+              <div className="input-grid">
+                <div className="input-field">
+                  <label>Ollama Server URL</label>
+                  <input
+                    type="text"
+                    value={localUrl}
+                    onChange={(e: React.ChangeEvent<any>) => setLocalUrl(e.currentTarget.value)}
+                    placeholder="http://localhost:11434"
+                  />
+                </div>
+                <div className="input-field">
+                  <label>Ollama Model Name</label>
+                  <input
+                    type="text"
+                    value={localModel}
+                    onChange={(e: React.ChangeEvent<any>) => setLocalModel(e.currentTarget.value)}
+                    placeholder="llama3-groq-tool-use"
+                  />
+                </div>
               </div>
             )}
           </div>

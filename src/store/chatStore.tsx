@@ -7,6 +7,7 @@ export interface ApiKeys {
   openai: string;
   claude: string;
   local_url: string;
+  local_model: string;
 }
 
 export interface EmailConfig {
@@ -63,7 +64,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     try {
       const saved = localStorage.getItem("echo_ai_config");
       if (saved) {
-        const parsed: AppConfig = JSON.parse(saved);
+        let parsed: AppConfig = JSON.parse(saved);
+        if (!parsed.api_keys.local_model) {
+          parsed.api_keys.local_model = "llama3-groq-tool-use";
+          localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
+        }
+        // Self-heal: If prompt is outdated, reload the new default from config.rs
+        if (!parsed.system_prompt.includes("Never make up or hallucinate")) {
+          localStorage.removeItem("echo_ai_config");
+          const cfg = await invoke<AppConfig>("get_config");
+          setConfig(cfg);
+          localStorage.setItem("echo_ai_config", JSON.stringify(cfg));
+          await invoke("update_config", { config: cfg });
+          addLog("Upgraded system prompt to latest default instructions.");
+          return;
+        }
         setConfig(parsed);
         await invoke("update_config", { config: parsed });
         addLog("Synced settings from local storage.");
