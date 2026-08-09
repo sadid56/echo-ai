@@ -229,31 +229,31 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="voice-overlay-container">
+    <div className="fixed inset-0 w-screen h-screen bg-bg-primary/95 backdrop-blur-[20px] z-[1000] flex flex-col items-center justify-center text-text-main animate-fade-in">
       {/* Dynamic Voice Visualizer Orb & Rings */}
-      <div className="voice-visualizer-container">
+      <div className="relative w-80 h-80 flex items-center justify-center mb-12">
         {voiceState === "LISTENING" && (
           <>
-            <div className="audio-ring"></div>
-            <div className="audio-ring"></div>
-            <div className="audio-ring"></div>
+            <div className="absolute w-[150px] h-[150px] rounded-full border border-accent-cyan/35 shadow-[0_0_20px_rgba(0,240,255,0.1)] animate-ripple"></div>
+            <div className="absolute w-[150px] h-[150px] rounded-full border border-accent-purple/35 shadow-[0_0_20px_rgba(199,125,255,0.1)] animate-ripple" style={{ animationDelay: "0.8s" }}></div>
+            <div className="absolute w-[150px] h-[150px] rounded-full border border-accent-blue/35 shadow-[0_0_20px_rgba(59,130,246,0.1)] animate-ripple" style={{ animationDelay: "1.6s" }}></div>
           </>
         )}
         <div
-          className={`voice-orb ${
+          className={`w-[130px] h-[130px] rounded-full bg-[radial-gradient(circle,var(--color-accent-cyan),var(--color-accent-purple),var(--color-accent-blue))] bg-[length:200%_200%] shadow-[0_0_40px_rgba(0,240,255,0.5),0_0_80px_rgba(199,125,255,0.3)] z-10 transition-all duration-500 ${
             voiceState === "LISTENING"
-              ? "listening"
+              ? "animate-orb-breathe"
               : voiceState === "THINKING"
-              ? "thinking"
+              ? "animate-orb-spin-glow"
               : voiceState === "SPEAKING"
-              ? "speaking"
+              ? "animate-orb-dance"
               : ""
           }`}
         />
       </div>
 
       {/* Voice Status Text */}
-      <h2 className="voice-status-title">
+      <h2 className="font-sans text-3xl font-semibold tracking-wide mb-2 bg-gradient-to-br from-white to-text-muted bg-clip-text text-transparent">
         {voiceState === "LISTENING"
           ? "Listening..."
           : voiceState === "THINKING"
@@ -263,7 +263,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
           : "Muted"}
       </h2>
       
-      <p className="voice-status-subtitle">
+      <p className="font-sans text-sm text-text-muted max-w-sm text-center h-5">
         {voiceState === "LISTENING"
           ? "Start speaking your command..."
           : voiceState === "THINKING"
@@ -274,22 +274,26 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
       </p>
 
       {/* Real-time speech transcription display */}
-      <div className="voice-transcription-container">
+      <div className="bg-white/3 border border-border-color px-8 py-5 rounded-xl max-w-xl w-[90%] mt-8 text-center min-h-[80px] flex items-center justify-center backdrop-blur-md">
         {transcription ? (
-          <p className="voice-transcription-text">"{transcription}"</p>
+          <p className="text-lg leading-relaxed text-text-main italic">"{transcription}"</p>
         ) : aiResponseText ? (
-          <p className="voice-transcription-text" style={{ fontStyle: "normal", opacity: 0.8 }}>
+          <p className="text-lg leading-relaxed text-text-main/80" style={{ fontStyle: "normal" }}>
             {aiResponseText.length > 120 ? aiResponseText.slice(0, 120) + "..." : aiResponseText}
           </p>
         ) : (
-          <p className="voice-transcription-text empty">Transcription will appear here</p>
+          <p className="text-lg leading-relaxed text-text-muted">Transcription will appear here</p>
         )}
       </div>
 
       {/* Control Buttons */}
-      <div className="voice-controls">
+      <div className="flex gap-6 mt-12">
         <button
-          className={`voice-control-btn mute ${isMuted ? "" : "active"}`}
+          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all cursor-pointer border hover:-translate-y-0.5 hover:shadow-lg ${
+            isMuted 
+              ? "bg-accent-orange/20 border-accent-orange/45 text-accent-orange hover:bg-accent-orange/30 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)]" 
+              : "bg-bg-tertiary border-border-color text-text-main hover:bg-white/10"
+          }`}
           onClick={toggleMute}
           title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
         >
@@ -311,7 +315,11 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
           )}
         </button>
 
-        <button className="voice-control-btn close" onClick={onClose} title="Exit Voice Mode">
+        <button 
+          className="w-14 h-14 rounded-full flex items-center justify-center bg-accent-red/20 border border-accent-red/45 text-accent-red hover:bg-accent-red/35 hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all cursor-pointer" 
+          onClick={onClose} 
+          title="Exit Voice Mode"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>

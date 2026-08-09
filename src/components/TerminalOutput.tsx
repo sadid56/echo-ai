@@ -12,36 +12,40 @@ export const TerminalOutput = () => {
     }
   }, [logs, isOpen]);
 
+  const getLogColorClass = (log: string) => {
+    if (log.includes("[Orchestrator]")) return "text-accent-cyan";
+    if (log.includes("[AI Response]")) return "text-accent-purple";
+    if (log.includes("[Tool Success]")) return "text-accent-green";
+    if (log.includes("[Tool Error]") || log.includes("[Orchestrator Err]") || log.includes("[Python Err]") || log.includes("[Err]")) return "text-accent-red font-semibold";
+    if (log.includes("[Python]")) return "text-accent-orange";
+    if (log.includes("[Rust Orchestrator]")) return "text-accent-blue";
+    return "text-text-muted";
+  };
+
   return (
-    <div className={`terminal-container ${isOpen ? "expanded" : "collapsed"}`}>
-      <div className="terminal-header" onClick={() => setIsOpen(!isOpen)}>
-        <div className="terminal-title">
-          <span className="status-dot green animate-pulse"></span>
+    <div className={`border border-border-color rounded-xl overflow-hidden bg-bg-secondary flex flex-col transition-all duration-300 ${isOpen ? "h-[180px]" : "h-[44px]"}`}>
+      <div className="flex justify-between items-center px-4 py-3 bg-bg-tertiary border-b border-border-color/50 cursor-pointer select-none text-[11px] font-mono text-text-muted shrink-0" onClick={() => setIsOpen(!isOpen)}>
+        <div className="flex items-center gap-2.5 font-semibold">
+          <span className="w-2 h-2 rounded-full bg-accent-green shadow-[0_0_8px_#10b981] animate-pulse"></span>
           <span>Real-time Execution Terminal (Rust & Sidecar)</span>
         </div>
-        <div className="terminal-controls" onClick={(e) => e.stopPropagation()}>
-          <button className="terminal-control-btn" onClick={clearLogs}>Clear Logs</button>
-          <button className="terminal-control-btn" onClick={() => setIsOpen(!isOpen)}>
+        <div className="flex items-center gap-3.5" onClick={(e) => e.stopPropagation()}>
+          <button className="hover:text-text-main hover:underline bg-transparent border-none text-text-muted text-[10px] font-mono tracking-wider cursor-pointer transition-all" onClick={clearLogs}>Clear Logs</button>
+          <button className="hover:text-text-main hover:underline bg-transparent border-none text-text-muted text-[10px] font-mono tracking-wider cursor-pointer transition-all" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? "Collapse" : "Expand"}
           </button>
         </div>
       </div>
       {isOpen && (
-        <div className="terminal-body">
+        <div className="flex-1 overflow-y-auto p-4 bg-bg-primary/55 font-mono text-[10.5px] leading-relaxed flex flex-col gap-2">
           {logs.length === 0 ? (
-            <div className="terminal-empty-text">No logs generated. Send a prompt to watch execution processes...</div>
+            <div className="text-text-muted/60 italic py-6 text-center">No logs generated. Send a prompt to watch execution processes...</div>
           ) : (
-            logs.map((log, idx) => {
-              let colorClass = "log-default";
-              if (log.includes("[Orchestrator]")) colorClass = "log-orchestrator";
-              else if (log.includes("[AI Response]")) colorClass = "log-ai";
-              else if (log.includes("[Tool Success]")) colorClass = "log-success";
-              else if (log.includes("[Tool Error]") || log.includes("[Orchestrator Err]") || log.includes("[Python Err]")) colorClass = "log-error";
-              else if (log.includes("[Python]")) colorClass = "log-python";
-              else if (log.includes("[Rust Orchestrator]")) colorClass = "log-rust";
-
-              return <div key={idx} className={`log-line ${colorClass}`}>{log}</div>;
-            })
+            logs.map((log, idx) => (
+              <div key={idx} className={`whitespace-pre-wrap ${getLogColorClass(log)}`}>
+                {log}
+              </div>
+            ))
           )}
           <div ref={terminalBottomRef} />
         </div>
