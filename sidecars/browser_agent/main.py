@@ -13,6 +13,15 @@ def main():
 
     runner = BrowserRunner()
     
+    # Self-heal local model argument confusion
+    if not args.steps and not args.url and args.query:
+        q_stripped = args.query.strip()
+        if q_stripped.startswith("http://") or q_stripped.startswith("https://"):
+            args.url = q_stripped
+            args.query = ""
+        else:
+            args.url = f"https://www.google.com/search?q={q_stripped.replace(' ', '+')}"
+
     if args.steps:
         try:
             steps_list = json.loads(args.steps)

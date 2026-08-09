@@ -10,6 +10,7 @@ import "./App.css";
 function Workspace() {
   const [showSettings, setShowSettings] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   const { config } = useChatStore();
 
   const getModelBadgeClass = (model: string) => {
@@ -29,7 +30,7 @@ function Workspace() {
             E C H O // A I
           </h1>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           {config && (
             <div className="text-xs px-3 py-1.5 rounded bg-bg-secondary border border-border-color font-medium text-text-muted">
               Engine:{" "}
@@ -39,6 +40,16 @@ function Workspace() {
             </div>
           )}
           <button
+            className={`px-4 py-1.5 rounded text-sm font-semibold border transition-all cursor-pointer ${
+              showLogs
+                ? "bg-accent-cyan/15 border-accent-cyan text-accent-cyan shadow-[0_0_10px_rgba(0,240,255,0.15)]"
+                : "bg-bg-secondary border-border-color text-text-main hover:bg-bg-tertiary hover:border-accent-cyan/50"
+            }`}
+            onClick={() => setShowLogs(!showLogs)}
+          >
+            📋 Logs
+          </button>
+          <button
             className="px-4 py-1.5 rounded bg-bg-secondary border border-border-color text-text-main text-sm font-semibold hover:bg-bg-tertiary hover:border-accent-cyan/50 hover:shadow-[0_0_10px_rgba(0,240,255,0.15)] transition-all cursor-pointer"
             onClick={() => setShowSettings(true)}
           >
@@ -46,13 +57,36 @@ function Workspace() {
           </button>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto p-6">
-        <ChatLog />
-      </main>
-      <footer className="p-4 border-t border-border-color bg-bg-secondary/40 backdrop-blur-md flex flex-col gap-3">
-        <CommandInput onVoiceClick={() => setShowVoice(true)} />
-        <TerminalOutput />
-      </footer>
+      
+      <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <main className="flex-1 overflow-y-auto p-6">
+            <ChatLog />
+          </main>
+          <footer className="p-4 border-t border-border-color bg-bg-secondary/40 backdrop-blur-md flex flex-col gap-3">
+            <CommandInput onVoiceClick={() => setShowVoice(true)} />
+          </footer>
+        </div>
+
+        {/* Sidebar logs system */}
+        {showLogs && (
+          <div className="w-[450px] h-full border-l border-border-color bg-bg-secondary/60 backdrop-blur-md flex flex-col animate-slide-left z-20 shrink-0">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-border-color shrink-0">
+              <h3 className="text-xs font-bold tracking-wider uppercase text-text-main font-sans">Execution logs</h3>
+              <button 
+                className="text-text-muted hover:text-text-main text-xl cursor-pointer bg-transparent border-none outline-none leading-none"
+                onClick={() => setShowLogs(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <TerminalOutput />
+            </div>
+          </div>
+        )}
+      </div>
+
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} />}
     </div>

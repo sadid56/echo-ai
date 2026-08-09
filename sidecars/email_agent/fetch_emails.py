@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--password", default="", help="App Password")
     parser.add_argument("--filter", default="UNSEEN", help="Search filter (UNSEEN, FLAGGED, ALL)")
     parser.add_argument("--limit", type=int, default=5, help="Limit output")
+    parser.add_argument("--query", default="", help="Search query (e.g. sender, subject, or body keyword)")
 
     args = parser.parse_args()
 
@@ -54,6 +55,13 @@ def main():
                 "snippet": "We identified a vulnerability in one of your packages. Please review the security tab to upgrade typescript..."
             })
 
+        if args.query:
+            q = args.query.lower()
+            mock_emails = [
+                m for m in mock_emails
+                if q in m["from"].lower() or q in m["subject"].lower() or q in m["snippet"].lower()
+            ]
+
         print(json.dumps({"success": True, "emails": mock_emails}))
         sys.stdout.flush()
         return
@@ -65,16 +73,21 @@ def main():
         mail.login(args.email, args.password)
         mail.select("inbox")
 
-        # Map filters
-        imap_filter = "UNSEEN"
+        # Map filters and criteria
+        criteria = []
         if args.filter == "FLAGGED":
-            imap_filter = "FLAGGED"
+            criteria.append("FLAGGED")
         elif args.filter == "ALL":
-            imap_filter = "ALL"
+            criteria.append("ALL")
+        else:
+            criteria.append("UNSEEN")
 
-        print(f"[LOG] Searching inbox with filter: {imap_filter}...")
+        if args.query:
+            criteria.extend(["TEXT", f'"{args.query}"'])
+
+        print(f"[LOG] Searching inbox with criteria: {criteria}...")
         sys.stdout.flush()
-        status, messages = mail.search(None, imap_filter)
+        status, messages = mail.search(None, *criteria)
         if status != "OK":
             print(json.dumps({"success": False, "error": f"Search failed: {status}"}))
             return

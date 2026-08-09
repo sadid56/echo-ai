@@ -87,10 +87,12 @@ impl AiProvider for GeminiProvider {
         if !tools.is_empty() {
             let mut function_declarations = Vec::new();
             for t in tools {
+                let mut params = t.parameters.clone();
+                uppercase_schema_types(&mut params);
                 function_declarations.push(json!({
                     "name": t.name,
                     "description": t.description,
-                    "parameters": t.parameters
+                    "parameters": params
                 }));
             }
             body["tools"] = json!([{
@@ -162,4 +164,24 @@ fn uuid_like_generator() -> String {
     let start = SystemTime::now();
     let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap_or_default();
     format!("{:x}", since_the_epoch.as_micros())
+}
+
+fn uppercase_schema_types(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            if let Some(Value::String(t)) = map.get_mut("type") {
+                let upper = t.to_uppercase();
+                *t = upper;
+            }
+            for (_k, v) in map.iter_mut() {
+                uppercase_schema_types(v);
+            }
+        }
+        Value::Array(arr) => {
+            for v in arr {
+                uppercase_schema_types(v);
+            }
+        }
+        _ => {}
+    }
 }

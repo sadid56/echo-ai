@@ -65,8 +65,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const saved = localStorage.getItem("echo_ai_config");
       if (saved) {
         let parsed: AppConfig = JSON.parse(saved);
-        if (!parsed.api_keys.local_model) {
-          parsed.api_keys.local_model = "llama3-groq-tool-use";
+        if (!parsed.api_keys.local_model || parsed.api_keys.local_model === "llama3-groq-tool-use" || parsed.api_keys.local_model === "qwen2.5-coder:3b") {
+          parsed.api_keys.local_model = "qwen2.5-coder:1.5b";
           localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
         }
         // Self-heal: If prompt is outdated, reload the new default from config.rs

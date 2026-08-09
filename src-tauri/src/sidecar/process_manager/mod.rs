@@ -4,6 +4,40 @@ use tokio::process::Command;
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 
+fn get_python_executable() -> String {
+    let cur_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+
+    // Check .venv in current directory
+    let venv_local = cur_dir.join(".venv").join("bin").join("python3");
+    if venv_local.exists() {
+        return venv_local.to_string_lossy().to_string();
+    }
+    
+    // Check .venv in parent directory
+    if let Some(parent) = cur_dir.parent() {
+        let venv_parent = parent.join(".venv").join("bin").join("python3");
+        if venv_parent.exists() {
+            return venv_parent.to_string_lossy().to_string();
+        }
+    }
+
+    // Windows checks (current directory)
+    let venv_win_local = cur_dir.join(".venv").join("Scripts").join("python.exe");
+    if venv_win_local.exists() {
+        return venv_win_local.to_string_lossy().to_string();
+    }
+
+    // Windows checks (parent directory)
+    if let Some(parent) = cur_dir.parent() {
+        let venv_win_parent = parent.join(".venv").join("Scripts").join("python.exe");
+        if venv_win_parent.exists() {
+            return venv_win_parent.to_string_lossy().to_string();
+        }
+    }
+
+    "python3".to_string()
+}
+
 pub async fn run_python_agent(
     app: AppHandle,
     url: &str,
@@ -31,7 +65,7 @@ pub async fn run_python_agent(
 
     let script_str = script_path.to_string_lossy().to_string();
     
-    let mut cmd = Command::new("python3");
+    let mut cmd = Command::new(get_python_executable());
     cmd.arg(&script_str);
     
     if !steps.is_empty() {
@@ -105,6 +139,8 @@ pub async fn run_email_agent(
     email_address: &str,
     password: &str,
     filter_type: &str,
+    limit: Option<i64>,
+    query: Option<&str>,
 ) -> Result<String, String> {
     let mut script_path = PathBuf::from(".");
     script_path.push("sidecars");
@@ -124,8 +160,8 @@ pub async fn run_email_agent(
 
     let script_str = script_path.to_string_lossy().to_string();
     
-    let mut child = Command::new("python3")
-        .arg(&script_str)
+    let mut cmd = Command::new(get_python_executable());
+    cmd.arg(&script_str)
         .arg("--server")
         .arg(server)
         .arg("--email")
@@ -133,7 +169,17 @@ pub async fn run_email_agent(
         .arg("--password")
         .arg(password)
         .arg("--filter")
-        .arg(filter_type)
+        .arg(filter_type);
+
+    if let Some(l) = limit {
+        cmd.arg("--limit").arg(l.to_string());
+    }
+
+    if let Some(q) = query {
+        cmd.arg("--query").arg(q);
+    }
+
+    let mut child = cmd
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()

@@ -2,7 +2,23 @@ import sys
 import time
 import os
 import json
+import shutil
 from agent.config import AgentConfig
+
+def get_system_browser_path():
+    candidates = [
+        "google-chrome-stable",
+        "google-chrome",
+        "brave-browser",
+        "brave",
+        "chromium",
+        "chromium-browser",
+    ]
+    for c in candidates:
+        path = shutil.which(c)
+        if path:
+            return path
+    return None
 
 class BrowserRunner:
     def __init__(self):
@@ -91,12 +107,23 @@ class BrowserRunner:
                 # 2. Fallback to launching a new persistent browser context on port 9222
                 if not connected_over_cdp:
                     self.log(f"Loading persistent profile from: {self.config.persistent_profile_path}")
+                    sys_browser = get_system_browser_path()
+                    if sys_browser:
+                        self.log(f"Detected system browser path: {sys_browser}")
+                    else:
+                        self.log("[Err] No system browser (Chrome/Brave/Chromium) found in PATH. Aborting browser launch.")
+                        return {
+                            "success": False,
+                            "error": "No default system browser found in your system's PATH. Please ensure Google Chrome or Brave is installed."
+                        }
+                        
                     try:
                         browser = p.chromium.launch_persistent_context(
                             user_data_dir=self.config.persistent_profile_path,
+                            executable_path=sys_browser,
                             headless=False,
-                            args=["--remote-debugging-port=9222"],
-                            viewport={"width": 1280, "height": 720}
+                            args=["--remote-debugging-port=9222", "--start-maximized"],
+                            viewport=None
                         )
                     except Exception as launch_err:
                         err_str = str(launch_err).lower()
@@ -106,9 +133,10 @@ class BrowserRunner:
                             temp_dir = tempfile.mkdtemp(prefix="echo-ai-browser-")
                             browser = p.chromium.launch_persistent_context(
                                 user_data_dir=temp_dir,
+                                executable_path=sys_browser,
                                 headless=False,
-                                args=["--remote-debugging-port=9222"],
-                                viewport={"width": 1280, "height": 720}
+                                args=["--remote-debugging-port=9222", "--start-maximized"],
+                                viewport=None
                             )
                         else:
                             self.log(f"[Err] Failed to launch browser: {launch_err}")
@@ -179,10 +207,78 @@ class BrowserRunner:
                             self.log(f"Waiting {seconds}s...")
                             time.sleep(seconds)
                             
+                        elif action == "screenshot":
+                            filename = step.get("filename", "screenshot.png")
+                            self.log(f"Taking page screenshot and saving to: {filename}")
+                            try:
+                                page.screenshot(path=filename)
+                            except Exception as ss_err:
+                                self.log(f"[Warning] Failed to take screenshot: {ss_err}")
+                            
                         elif action == "extract":
-                            self.log("Extracting webpage text...")
+                            self.log("Extracting webpage text and interactive elements...")
                             body_text = page.locator("body").inner_text()
-                            extracted_content = body_text[:4000]
+                            
+                            js_code = """
+                            (() => {
+                                const interactive = [];
+                                document.querySelectorAll('input, select, textarea, button, [role="button"], a').forEach(el => {
+                                    const rect = el.getBoundingClientRect();
+                                    if (rect.width === 0 || rect.height === 0) return;
+                                    
+                                    const tag = el.tagName.toLowerCase();
+                                    let label = '';
+                                    let selector = '';
+                                    
+                                    if (tag === 'input' || tag === 'textarea') {
+                                        const type = el.getAttribute('type') || 'text';
+                                        const placeholder = el.getAttribute('placeholder') || '';
+                                        const name = el.getAttribute('name') || '';
+                                        const id = el.getAttribute('id') || '';
+                                        label = `Input (type=${type}, placeholder="${placeholder}", name="${name}")`;
+                                        
+                                        if (id) selector = `#${id}`;
+                                        else if (name) selector = `input[name="${name}"]`;
+                                        else if (placeholder) selector = `input[placeholder="${placeholder}"]`;
+                                    } else if (tag === 'button' || el.getAttribute('role') === 'button') {
+                                        const text = el.innerText.trim();
+                                        const name = el.getAttribute('name') || '';
+                                        const id = el.getAttribute('id') || '';
+                                        label = `Button (text="${text}", name="${name}")`;
+                                        
+                                        if (id) selector = `#${id}`;
+                                        else if (name) selector = `button[name="${name}"]`;
+                                        else if (text) selector = `text=${text}`;
+                                    } else if (tag === 'a') {
+                                        const text = el.innerText.trim();
+                                        if (!text) return;
+                                        label = `Link (text="${text}")`;
+                                        selector = `text=${text}`;
+                                    } else if (tag === 'select') {
+                                        const name = el.getAttribute('name') || '';
+                                        const id = el.getAttribute('id') || '';
+                                        label = `Select (name="${name}")`;
+                                        if (id) selector = `#${id}`;
+                                        else selector = `select[name="${name}"]`;
+                                    }
+                                    
+                                    if (selector && label) {
+                                        interactive.push(`* ${label} -> selector: ${selector}`);
+                                    }
+                                });
+                                return interactive.slice(0, 45).join('\\n');
+                            })()
+                            """
+                            try:
+                                interactive_elements = page.evaluate(js_code)
+                            except Exception as eval_err:
+                                interactive_elements = f"Error extracting interactive elements: {eval_err}"
+                                
+                            extracted_content = (
+                                f"{body_text[:3000]}\n\n"
+                                f"=== INTERACTIVE ELEMENTS & SELECTORS ON THIS PAGE ===\n"
+                                f"{interactive_elements}"
+                            )
                             
                     except Exception as step_err:
                         self.log(f"[Warning] Step failed: {step_err}")

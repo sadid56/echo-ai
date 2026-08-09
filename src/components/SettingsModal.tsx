@@ -12,7 +12,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
   const [openaiKey, setOpenaiKey] = useState("");
   const [claudeKey, setClaudeKey] = useState("");
   const [localUrl, setLocalUrl] = useState("");
-  const [localModel, setLocalModel] = useState("llama3-groq-tool-use");
+  const [localModel, setLocalModel] = useState("qwen2.5-coder:3b");
   const [sysPrompt, setSysPrompt] = useState("");
   const [aiName, setAiName] = useState("");
   const [userName, setUserName] = useState("");
@@ -20,6 +20,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
   const [emailAddress, setEmailAddress] = useState("");
   const [appPassword, setAppPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -146,15 +147,86 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                     className="bg-bg-tertiary border border-border-color focus:border-accent-cyan/60 text-text-main text-sm font-sans px-3 py-2.5 rounded-lg outline-none transition-all"
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 relative">
                   <label className="text-[10px] font-semibold text-text-muted uppercase tracking-wider font-sans">Ollama Model Name</label>
-                  <input
-                    type="text"
-                    value={localModel}
-                    onChange={(e: React.ChangeEvent<any>) => setLocalModel(e.currentTarget.value)}
-                    placeholder="llama3-groq-tool-use"
-                    className="bg-bg-tertiary border border-border-color focus:border-accent-cyan/60 text-text-main text-sm font-sans px-3 py-2.5 rounded-lg outline-none transition-all"
-                  />
+                  
+                  {/* Trigger Button */}
+                  <div 
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="bg-bg-tertiary border border-border-color focus-within:border-accent-cyan/60 text-text-main text-sm font-sans px-3 py-2.5 rounded-lg flex justify-between items-center cursor-pointer select-none transition-all hover:bg-bg-tertiary/75"
+                  >
+                    <span className="font-semibold text-accent-cyan">{localModel}</span>
+                    <svg 
+                      className={`w-4 h-4 text-text-muted transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+
+                  {/* Dropdown Menu */}
+                  {dropdownOpen && (
+                    <div className="absolute top-[100%] left-0 right-0 mt-1.5 bg-bg-secondary border border-border-color rounded-xl shadow-2xl z-[300] overflow-hidden flex flex-col max-h-64 overflow-y-auto divide-y divide-border-color/30 animate-fade-in backdrop-blur-md">
+                      {/* Option: qwen2.5-coder:1.5b */}
+                      <div 
+                        onClick={() => {
+                          setLocalModel("qwen2.5-coder:1.5b");
+                          setDropdownOpen(false);
+                        }}
+                        className={`px-4 py-2.5 flex flex-col gap-0.5 cursor-pointer hover:bg-accent-cyan/5 transition-colors ${localModel === "qwen2.5-coder:1.5b" ? "bg-accent-cyan/10" : ""}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-text-main">qwen2.5-coder:1.5b</span>
+                          <span className="text-[8px] font-extrabold uppercase tracking-wider bg-accent-cyan/20 text-accent-cyan px-1.5 py-0.5 rounded">Recommended</span>
+                        </div>
+                        <span className="text-[10px] text-text-muted">Super fast, low VRAM usage. Perfect for coding & automation.</span>
+                      </div>
+
+                      {/* Option: qwen2.5-coder:3b */}
+                      <div 
+                        onClick={() => {
+                          setLocalModel("qwen2.5-coder:3b");
+                          setDropdownOpen(false);
+                        }}
+                        className={`px-4 py-2.5 flex flex-col gap-0.5 cursor-pointer hover:bg-accent-cyan/5 transition-colors ${localModel === "qwen2.5-coder:3b" ? "bg-accent-cyan/10" : ""}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-text-main">qwen2.5-coder:3b</span>
+                          <span className="text-[8px] font-extrabold uppercase tracking-wider bg-bg-tertiary text-text-muted px-1.5 py-0.5 rounded">Balanced</span>
+                        </div>
+                        <span className="text-[10px] text-text-muted">Excellent instruction following & code completion.</span>
+                      </div>
+
+                      {/* Option: llama3-groq-tool-use */}
+                      <div 
+                        onClick={() => {
+                          setLocalModel("llama3-groq-tool-use");
+                          setDropdownOpen(false);
+                        }}
+                        className={`px-4 py-2.5 flex flex-col gap-0.5 cursor-pointer hover:bg-accent-cyan/5 transition-colors ${localModel === "llama3-groq-tool-use" ? "bg-accent-cyan/10" : ""}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-text-main">llama3-groq-tool-use</span>
+                        </div>
+                        <span className="text-[10px] text-text-muted">Native tool calling with Llama-3 architecture.</span>
+                      </div>
+
+                      {/* Custom Input Option */}
+                      <div className="px-4 py-2.5 flex flex-col gap-1.5 bg-bg-tertiary/40">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-text-muted">Or enter a custom model</span>
+                        <input
+                          type="text"
+                          value={localModel}
+                          onChange={(e: React.ChangeEvent<any>) => setLocalModel(e.currentTarget.value)}
+                          placeholder="Type custom model name..."
+                          className="bg-bg-tertiary border border-border-color/80 focus:border-accent-cyan/60 text-text-main text-xs font-sans px-2.5 py-1.5 rounded-md outline-none transition-all w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

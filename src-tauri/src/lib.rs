@@ -41,6 +41,106 @@ fn clear_chat(state: State<'_, AppState>) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn transcribe_audio(
+    state: State<'_, AppState>,
+    audio_base64: String,
+    mime_type: String,
+) -> Result<String, String> {
+    crate::ai::transcribe::transcribe(&state, &audio_base64, &mime_type).await
+}
+
+use std::process::{Child, Command};
+use std::fs;
+use std::path::PathBuf;
+
+static RECORDER_PROCESS: Mutex<Option<Child>> = Mutex::new(None);
+static RECORDING_PATH: Mutex<Option<PathBuf>> = Mutex::new(None);
+
+#[tauri::command]
+fn start_recording() -> Result<(), String> {
+    let mut proc_guard = RECORDER_PROCESS.lock().unwrap();
+    if proc_guard.is_some() {
+        return Err("Already recording".to_string());
+    }
+
+    let temp_dir = std::env::temp_dir();
+    let file_path = temp_dir.join("echo_ai_recording.wav");
+
+    // Try arecord, pw-record, parecord
+    let mut child = Command::new("arecord")
+        .args(&["-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "0"])
+        .arg(&file_path)
+        .spawn();
+
+    if child.is_err() {
+        // Fallback to pw-record
+        child = Command::new("pw-record")
+            .args(&["--format", "s16", "--rate", "16000", "--channels", "1"])
+            .arg(&file_path)
+            .spawn();
+    }
+
+    if child.is_err() {
+        // Fallback to parecord
+        child = Command::new("parecord")
+            .args(&["--format", "s16ne", "--rate", "16000", "--channels", "1"])
+            .arg(&file_path)
+            .spawn();
+    }
+
+    match child {
+        Ok(c) => {
+            *proc_guard = Some(c);
+            let mut path_guard = RECORDING_PATH.lock().unwrap();
+            *path_guard = Some(file_path);
+            Ok(())
+        }
+        Err(e) => Err(format!("Could not spawn any system recording tool (arecord/pw-record/parecord). Please ensure alsa-utils, pipewire-utils, or pulseaudio-utils is installed. Error: {}", e)),
+    }
+}
+
+#[tauri::command]
+async fn stop_recording(state: State<'_, AppState>) -> Result<String, String> {
+    let file_path = {
+        let mut proc_guard = RECORDER_PROCESS.lock().unwrap();
+        let child_opt = proc_guard.take();
+        let mut child = child_opt.ok_or_else(|| "Not recording".to_string())?;
+
+        // Terminate the recording process
+        let _ = child.kill();
+        let _ = child.wait(); // prevent zombie process
+
+        let path_guard = RECORDING_PATH.lock().unwrap();
+        let file_path_opt = path_guard.as_ref();
+        let file_path = file_path_opt.ok_or_else(|| "Recording path not set".to_string())?.clone();
+        
+        file_path
+    };
+
+    if !file_path.exists() {
+        return Err("Recording file was not created".to_string());
+    }
+
+    // Read the recorded file
+    let audio_bytes = fs::read(&file_path)
+        .map_err(|e| format!("Failed to read recording file: {}", e))?;
+
+    // Clean up file
+    let _ = fs::remove_file(&file_path);
+
+    if audio_bytes.len() < 100 {
+        return Err("Recording is too short or empty".to_string());
+    }
+
+    // Convert to base64
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    let audio_base64 = STANDARD.encode(&audio_bytes);
+
+    // Call transcribe
+    crate::ai::transcribe::transcribe(&state, &audio_base64, "audio/wav").await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -58,13 +158,20 @@ pub fn run() {
                 memory: Mutex::new(memory),
             });
             
+            let handle = app.handle().clone();
+            crate::system::watcher::start_file_watcher(handle.clone());
+            crate::system::scheduler::start_scheduler(handle);
+            
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             send_prompt,
             get_config,
             update_config,
-            clear_chat
+            clear_chat,
+            transcribe_audio,
+            start_recording,
+            stop_recording
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

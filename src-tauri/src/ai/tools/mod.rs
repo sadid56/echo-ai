@@ -1,5 +1,5 @@
 use crate::ai::providers::ToolDefinition;
-use crate::system::{file_system, terminal};
+use crate::system::{file_system, terminal, clipboard, notification, git};
 use crate::sidecar::process_manager;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
@@ -69,7 +69,7 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "run_browser_agent".to_string(),
-            description: "Run the Python sidecar automation browser to crawl, click links/tabs, type text, wait, and scroll web pages".to_string(),
+            description: "Run the Python sidecar automation browser to crawl, click links/tabs, type text, wait, take screenshots, and scroll web pages".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
@@ -83,20 +83,21 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
                     },
                     "steps": {
                         "type": "array",
-                        "description": "Optional list of step-by-step interactive actions to execute. Example: [{\"action\": \"navigate\", \"url\": \"https://www.facebook.com\"}, {\"action\": \"wait\", \"seconds\": 3}, {\"action\": \"click\", \"selector\": \"text=Reels\"}, {\"action\": \"scroll\", \"direction\": \"down\", \"count\": 2}, {\"action\": \"extract\"}]",
+                        "description": "Optional list of step-by-step interactive actions to execute. Example: [{\"action\": \"navigate\", \"url\": \"https://www.facebook.com\"}, {\"action\": \"wait\", \"seconds\": 3}, {\"action\": \"screenshot\", \"filename\": \"screenshot.png\"}, {\"action\": \"extract\"}]",
                         "items": {
                             "type": "object",
                             "properties": {
                                 "action": {
                                     "type": "string",
-                                    "description": "The type of action: 'navigate', 'click' (by CSS class or text like 'text=Reels'), 'type' (inputs text), 'scroll' (down/up), 'wait' (seconds), 'extract' (webpage text)"
+                                    "description": "The type of action: 'navigate', 'click' (by CSS class or text like 'text=Reels'), 'type' (inputs text), 'scroll' (down/up), 'wait' (seconds), 'screenshot', 'extract' (webpage text)"
                                 },
                                 "url": { "type": "string" },
                                 "selector": { "type": "string" },
                                 "text": { "type": "string" },
                                 "direction": { "type": "string" },
                                 "count": { "type": "integer" },
-                                "seconds": { "type": "integer" }
+                                "seconds": { "type": "integer" },
+                                "filename": { "type": "string" }
                             },
                             "required": ["action"]
                         }
@@ -113,9 +114,87 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
                     "filter_type": {
                         "type": "string",
                         "description": "Email filter ('UNSEEN' for unread emails, 'FLAGGED' for important/starred/flagged emails, 'ALL' for recent emails)"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of emails to fetch (defaults to 5)"
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "Optional search term/keyword (e.g. sender name or domain like 'ClickUp', or subject/body keywords)"
                     }
                 },
                 "required": ["filter_type"]
+            }),
+        },
+        ToolDefinition {
+            name: "read_clipboard".to_string(),
+            description: "Get the current text copied to the system clipboard".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "write_clipboard".to_string(),
+            description: "Copy text content onto the system clipboard".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "The text to copy to the clipboard"
+                    }
+                },
+                "required": ["text"]
+            }),
+        },
+        ToolDefinition {
+            name: "send_notification".to_string(),
+            description: "Send a native desktop notification to the user".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Notification header"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Main notification text body"
+                    }
+                },
+                "required": ["title", "body"]
+            }),
+        },
+        ToolDefinition {
+            name: "run_git_action".to_string(),
+            description: "Perform common Git operations (status, diff, commit_and_push, rebase, rebase_continue, rebase_abort)".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "description": "Git action: 'status', 'diff', 'commit_and_push', 'rebase', 'rebase_continue', or 'rebase_abort'"
+                    },
+                    "commit_message": {
+                        "type": "string",
+                        "description": "Required message when action is commit_and_push"
+                    },
+                    "target": {
+                        "type": "string",
+                        "description": "Target branch/upstream (e.g. 'main', 'origin/main') when action is 'rebase'"
+                    }
+                },
+                "required": ["action"]
+            }),
+        },
+        ToolDefinition {
+            name: "get_active_notifications".to_string(),
+            description: "Read active desktop notifications on the user's OS".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {}
             }),
         },
     ]
@@ -167,12 +246,37 @@ pub async fn execute_tool(
         }
         "fetch_emails" => {
             let filter_type = args_val["filter_type"].as_str().unwrap_or("UNSEEN");
+            let limit = args_val["limit"].as_i64();
+            let query = args_val["query"].as_str();
             let state = app.state::<AppState>();
             let config = state.config.lock().unwrap().clone();
             let server = config.email.imap_server;
             let email_addr = config.email.email_address;
             let pwd = config.email.app_password;
-            process_manager::run_email_agent(app, &server, &email_addr, &pwd, filter_type).await
+            process_manager::run_email_agent(app, &server, &email_addr, &pwd, filter_type, limit, query).await
+        }
+        "read_clipboard" => {
+            clipboard::read_clipboard()
+        }
+        "write_clipboard" => {
+            let text = args_val["text"].as_str().ok_or("Missing 'text' argument")?;
+            clipboard::write_clipboard(text)?;
+            Ok(json!({ "status": "success", "message": "Copied to clipboard" }).to_string())
+        }
+        "send_notification" => {
+            let title = args_val["title"].as_str().ok_or("Missing 'title' argument")?;
+            let body = args_val["body"].as_str().ok_or("Missing 'body' argument")?;
+            notification::send_notification(title, body)?;
+            Ok(json!({ "status": "success", "message": "Notification sent" }).to_string())
+        }
+        "run_git_action" => {
+            let action = args_val["action"].as_str().ok_or("Missing 'action' argument")?;
+            let commit_message = args_val["commit_message"].as_str();
+            let target = args_val["target"].as_str();
+            git::run_git_action(action, commit_message, target).await
+        }
+        "get_active_notifications" => {
+            notification::get_active_notifications().await
         }
         _ => Err(format!("Unknown tool: {}", name)),
     }

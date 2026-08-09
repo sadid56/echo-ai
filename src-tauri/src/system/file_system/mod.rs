@@ -17,6 +17,10 @@ pub fn list_directory(path: &str) -> Result<Vec<String>, String> {
             let file_type = if entry.path().is_dir() { "Dir" } else { "File" };
             files.push(format!("[{}] {}", file_type, file_name));
         }
+        if files.len() >= 60 {
+            files.push("[Alert] ... Remaining items truncated due to directory size limit.".to_string());
+            break;
+        }
     }
     Ok(files)
 }
@@ -26,7 +30,14 @@ pub fn read_file(path: &str) -> Result<String, String> {
     if !p.exists() {
         return Err(format!("File '{}' does not exist", path));
     }
-    fs::read_to_string(p).map_err(|e| format!("Failed to read file: {}", e))
+    let content = fs::read_to_string(p).map_err(|e| format!("Failed to read file: {}", e))?;
+    let numbered = content
+        .lines()
+        .enumerate()
+        .map(|(i, line)| format!("{:>4}: {}", i + 1, line))
+        .collect::<Vec<String>>()
+        .join("\n");
+    Ok(numbered)
 }
 
 pub fn write_file(path: &str, content: &str) -> Result<(), String> {

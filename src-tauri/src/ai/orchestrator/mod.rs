@@ -23,10 +23,36 @@ impl Orchestrator {
         state: &AppState,
         prompt: &str,
     ) -> Result<String, String> {
-        let (config, system_prompt, active_model) = {
+        let (config, mut system_prompt, active_model) = {
             let conf = state.config.lock().unwrap();
             (conf.clone(), conf.system_prompt.clone(), conf.active_model.clone())
         };
+
+        // Dynamically inject rules in case Local Storage overrides the default system prompt
+        let interaction_rule = "\n\nYou have full ability to interact with web pages, such as clicking buttons or links, filling out input fields/forms, scrolling, and waiting. If the user asks you to click a button, type text, log in, or interact with any element on a page, you MUST call 'run_browser_agent' and specify the actions inside the 'steps' parameter array. Never claim you cannot interact with pages or buttons directly.";
+        let line_number_rule = "\n\nWhen you read files using 'read_file', they will have line numbers prepended (e.g., '   1: code'). When writing/modifying code files using 'write_file', you MUST strip these prepended line numbers and save ONLY the raw code.";
+        
+        if !system_prompt.contains("interact with web pages") {
+            system_prompt.push_str(interaction_rule);
+        }
+        if !system_prompt.contains("strip these prepended line numbers") {
+            system_prompt.push_str(line_number_rule);
+        }
+        
+        let diff_rule = "\n\nWhen showing code changes or answering what changed in a file, you MUST present the differences in a standard Git diff unified format (using '-' for deletions and '+' for additions) indicating exactly which lines changed.";
+        if !system_prompt.contains("present the differences in a standard Git diff") {
+            system_prompt.push_str(diff_rule);
+        }
+        
+        let local_search_rule = "\n\nIf the user asks you to locate, search for, or find local files, directories, or folders on their system, you MUST call 'execute_command' with a command like 'find /home -type d -name ... 2>/dev/null' or check the current path using 'execute_command' with 'pwd'. Never just write a text tutorial explaining how they can do it themselves.";
+        if !system_prompt.contains("locate, search for, or find local files") {
+            system_prompt.push_str(local_search_rule);
+        }
+
+        let emoji_rule = "\n\nYou MUST always include appropriate emojis in all of your responses to make them friendly and engaging.";
+        if !system_prompt.contains("include appropriate emojis") {
+            system_prompt.push_str(emoji_rule);
+        }
 
         // Initialize system prompt in memory if memory is empty
         {
@@ -42,6 +68,8 @@ impl Orchestrator {
         let mut current_prompt = prompt.to_string();
         let mut loop_count = 0;
         const MAX_LOOPS: usize = 5;
+
+        let mut last_tool_call_signature: Option<(String, String)> = None;
 
         loop {
             loop_count += 1;
@@ -63,7 +91,7 @@ impl Orchestrator {
             let _ = app.emit("sidecar-log", log_msg);
 
             // Directly dispatch based on the model without dyn traits
-            let response = match active_model.as_str() {
+            let mut response = match active_model.as_str() {
                 "Gemini" => {
                     let key = config.api_keys.gemini.clone();
                     if key.is_empty() { return Err("Gemini API key is empty.".to_string()); }
@@ -86,6 +114,30 @@ impl Orchestrator {
                     LocalProvider.generate_response(&current_prompt, &history, &available_tools, &payload).await?
                 }
             };
+
+            // Detect duplicate tool call loop
+            if let Some(ref tcs) = response.tool_calls {
+                if let Some(first_tc) = tcs.first() {
+                    let sig = (first_tc.name.clone(), first_tc.arguments.clone());
+                    if let Some(ref last_sig) = last_tool_call_signature {
+                        if last_sig == &sig {
+                            let _ = app.emit("sidecar-log", "[Orchestrator Warning] Duplicate tool call detected. Breaking loop to prevent infinite execution and summarizing...".to_string());
+                            let mut mem = state.memory.lock().unwrap();
+                            mem.add_message(Message {
+                                role: Role::User,
+                                content: "You are repeating the same tool call. Please STOP calling tools and summarize the information you have found in the previous command execution outputs.".to_string(),
+                                name: None,
+                                tool_calls: None,
+                            });
+                            loop_count = MAX_LOOPS - 1;
+                            current_prompt.clear();
+                            response.tool_calls = None; // Force assistant to not call tool again in history
+                            continue;
+                        }
+                    }
+                    last_tool_call_signature = Some(sig);
+                }
+            }
 
             // Clear current prompt so it isn't appended in subsequent loops
             current_prompt.clear();

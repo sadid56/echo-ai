@@ -52,13 +52,225 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
   const [transcription, setTranscription] = useState<string>("");
   const [aiResponseText, setAiResponseText] = useState<string>("");
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isNativeRecordingMode, setIsNativeRecordingMode] = useState<boolean>(false);
+  const [useBackendRecorder, setUseBackendRecorder] = useState<boolean>(false);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isComponentMounted = useRef<boolean>(true);
 
+  // Native recording refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Sync state with refs to avoid closure stale values
+  const voiceStateRef = useRef<VoiceState>(voiceState);
+  const isMutedRef = useRef<boolean>(isMuted);
+  const useBackendRecorderRef = useRef<boolean>(useBackendRecorder);
+
+  useEffect(() => {
+    voiceStateRef.current = voiceState;
+  }, [voiceState]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  useEffect(() => {
+    useBackendRecorderRef.current = useBackendRecorder;
+  }, [useBackendRecorder]);
+
   const { addLog } = useChatStore();
+
+  const cleanupAudioResources = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  // Start native recording fallback
+  const startNativeRecording = async () => {
+    if (useBackendRecorderRef.current) {
+      try {
+        setVoiceState("LISTENING");
+        setTranscription("");
+        setAiResponseText("");
+        await invoke("start_recording");
+        
+        // Auto-stop after 20 seconds to prevent infinite recording
+        const timeout = setTimeout(() => {
+          if (voiceStateRef.current === "LISTENING") {
+            stopNativeRecording();
+          }
+        }, 20000);
+        
+        (startNativeRecording as any).timeoutId = timeout;
+      } catch (err) {
+        addLog(`Backend recording failed to start: ${err}`);
+        alert("Failed to start recording on this system. Please check your audio input devices.");
+        onClose();
+      }
+      return;
+    }
+
+    try {
+      cleanupAudioResources();
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+        if (audioBlob.size < 1000) {
+          return;
+        }
+
+        // Convert Blob to Base64
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64data = (reader.result as string).split(",")[1];
+          if (!isComponentMounted.current) return;
+          setVoiceState("THINKING");
+          try {
+            const text = await invoke<string>("transcribe_audio", {
+              audioBase64: base64data,
+              mimeType: mediaRecorder.mimeType || "audio/webm",
+            });
+            if (!isComponentMounted.current) return;
+            if (text.trim()) {
+              processVoiceInput(text.trim());
+            } else {
+              startListening();
+            }
+          } catch (err) {
+            addLog(`Transcription Error: ${err}`);
+            if (isComponentMounted.current) {
+              speakResponse("Sorry, I could not transcribe your voice. Please try again.");
+            }
+          }
+        };
+      };
+
+      // Set up silence detection
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtxClass) {
+        const audioContext = new AudioCtxClass();
+        audioCtxRef.current = audioContext;
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        audioAnalyserRef.current = analyser;
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        let silenceStart = Date.now();
+        const SILENCE_THRESHOLD = 8;
+        const SILENCE_DURATION = 1800; // 1.8s
+
+        const checkSilence = () => {
+          if (!isComponentMounted.current) return;
+          if (mediaRecorder.state !== "recording") return;
+
+          analyser.getByteFrequencyData(dataArray);
+          let average = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            average += dataArray[i];
+          }
+          average = average / bufferLength;
+
+          if (average < SILENCE_THRESHOLD) {
+            if (Date.now() - silenceStart > SILENCE_DURATION) {
+              stopNativeRecording();
+              return;
+            }
+          } else {
+            silenceStart = Date.now();
+          }
+
+          animationFrameRef.current = requestAnimationFrame(checkSilence);
+        };
+
+        mediaRecorder.start();
+        animationFrameRef.current = requestAnimationFrame(checkSilence);
+      } else {
+        mediaRecorder.start();
+      }
+    } catch (err) {
+      addLog(`Failed to start browser recording: ${err}. Falling back to Backend Recorder.`);
+      setUseBackendRecorder(true);
+      useBackendRecorderRef.current = true;
+      
+      // Try backend recording immediately
+      try {
+        setVoiceState("LISTENING");
+        setTranscription("");
+        setAiResponseText("");
+        await invoke("start_recording");
+      } catch (backendErr) {
+        addLog(`Backend recording fallback failed: ${backendErr}`);
+        alert("Failed to access microphone. Please ensure microphone permissions are allowed or a system recording utility (arecord/pw-record) is installed.");
+        onClose();
+      }
+    }
+  };
+
+  const stopNativeRecording = () => {
+    if ((startNativeRecording as any).timeoutId) {
+      clearTimeout((startNativeRecording as any).timeoutId);
+      (startNativeRecording as any).timeoutId = null;
+    }
+
+    if (useBackendRecorderRef.current) {
+      setVoiceState("THINKING");
+      invoke<string>("stop_recording")
+        .then((text) => {
+          if (!isComponentMounted.current) return;
+          if (text.trim()) {
+            processVoiceInput(text.trim());
+          } else {
+            startListening();
+          }
+        })
+        .catch((err) => {
+          addLog(`Backend transcription failed: ${err}`);
+          if (isComponentMounted.current) {
+            speakResponse("Sorry, I could not transcribe your voice. Please check your mic and try again.");
+          }
+        });
+      return;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    cleanupAudioResources();
+  };
 
   // Initialize Speech Recognition and Synthesis
   useEffect(() => {
@@ -66,93 +278,111 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
     synthRef.current = window.speechSynthesis;
 
     const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognitionMode = false;
+    
     if (!SpeechRecognitionClass) {
-      addLog("Web Speech Recognition is not supported in this browser.");
-      alert("Voice input is not supported in this browser environment. Please use Chrome, Safari or Edge.");
-      onClose();
-      return;
+      addLog("Web Speech Recognition is not supported. Using native MediaRecorder fallback.");
+      setIsNativeRecordingMode(true);
+      recognitionMode = true;
     }
 
-    const recognition = new SpeechRecognitionClass();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
+    if (SpeechRecognitionClass) {
+      const recognition = new SpeechRecognitionClass();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interimTranscript = "";
-      let finalTranscript = "";
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
         }
-      }
 
-      const activeText = finalTranscript || interimTranscript;
-      setTranscription(activeText);
+        const activeText = finalTranscript || interimTranscript;
+        setTranscription(activeText);
 
-      // If we have a final transcript, stop recognition and send to AI
-      if (finalTranscript.trim()) {
-        processVoiceInput(finalTranscript.trim());
-      }
-    };
+        if (finalTranscript.trim()) {
+          processVoiceInput(finalTranscript.trim());
+        }
+      };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      // Don't log normal aborts
-      if (event.error !== "aborted" && event.error !== "no-speech") {
-        addLog(`Voice Recognition Error: ${event.error}`);
-      }
-    };
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        if (event.error !== "aborted" && event.error !== "no-speech") {
+          addLog(`Voice Recognition Error: ${event.error}`);
+        }
+      };
 
-    recognition.onend = () => {
-      // Auto-restart listening if we are in LISTENING state and not muted
-      if (isComponentMounted.current && voiceState === "LISTENING" && !isMuted) {
+      recognition.onend = () => {
+        if (isComponentMounted.current && voiceStateRef.current === "LISTENING" && !isMutedRef.current) {
+          try {
+            recognitionRef.current?.start();
+          } catch (e) {
+            // Already running
+          }
+        }
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    // Delay start listening slightly to let things initialize
+    const timer = setTimeout(() => {
+      if (recognitionMode) {
+        startNativeRecording();
+      } else {
         try {
           recognitionRef.current?.start();
-        } catch (e) {
-          // Already running
-        }
+        } catch (e) {}
       }
-    };
-
-    recognitionRef.current = recognition;
-    
-    // Start listening
-    startListening();
+    }, 100);
 
     return () => {
       isComponentMounted.current = false;
+      clearTimeout(timer);
       if (recognitionRef.current) {
         recognitionRef.current.abort();
       }
+      cleanupAudioResources();
       if (synthRef.current) {
         synthRef.current.cancel();
       }
     };
-  }, [voiceState, isMuted]);
+  }, [isNativeRecordingMode]);
 
   const startListening = () => {
-    if (isMuted) return;
+    if (isMutedRef.current) return;
     setVoiceState("LISTENING");
     setTranscription("");
     setAiResponseText("");
-    try {
-      recognitionRef.current?.start();
-    } catch (e) {
-      // Ignored
+    if (isNativeRecordingMode) {
+      startNativeRecording();
+    } else {
+      try {
+        recognitionRef.current?.start();
+      } catch (e) {
+        // Ignored
+      }
     }
   };
 
   const processVoiceInput = async (text: string) => {
-    // Stop recognition during thinking and speaking
-    recognitionRef.current?.stop();
+    if (voiceStateRef.current === "LISTENING") {
+      if (isNativeRecordingMode) {
+        stopNativeRecording();
+      } else {
+        recognitionRef.current?.stop();
+      }
+    }
     setVoiceState("THINKING");
     addLog(`Voice Input: "${text}"`);
 
     try {
-      // Send speech input to the AI Orchestrator via Tauri IPC
       const response = await invoke<string>("send_prompt", { prompt: text });
       
       if (!isComponentMounted.current) return;
@@ -170,13 +400,11 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
   const speakResponse = (text: string) => {
     if (!synthRef.current) return;
 
-    // Cancel any ongoing speaking
     synthRef.current.cancel();
 
-    // Clean up text of markdown markers to speak cleanly
     const cleanedText = text
-      .replace(/[\*\#\-\`\_]/g, "") // remove markdown characters
-      .replace(/\[.*?\]\(.*?\)/g, "") // remove links
+      .replace(/[\*\#\-\`\_]/g, "")
+      .replace(/\[.*?\]\(.*?\)/g, "")
       .trim();
 
     setVoiceState("SPEAKING");
@@ -185,7 +413,6 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
     const utterance = new SpeechSynthesisUtterance(cleanedText);
     utteranceRef.current = utterance;
 
-    // Find a premium native voice if available
     const voices = synthRef.current.getVoices();
     const premiumVoice = voices.find(
       (v) =>
@@ -199,7 +426,6 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
 
     utterance.onend = () => {
       if (isComponentMounted.current) {
-        // Automatically start listening again for next turns
         startListening();
       }
     };
@@ -217,14 +443,37 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
   const toggleMute = () => {
     if (isMuted) {
       setIsMuted(false);
+      isMutedRef.current = false;
       startListening();
     } else {
       setIsMuted(true);
+      isMutedRef.current = true;
       setVoiceState("MUTED");
-      recognitionRef.current?.abort();
+      if (isNativeRecordingMode) {
+        stopNativeRecording();
+      } else {
+        recognitionRef.current?.abort();
+      }
       if (synthRef.current) {
         synthRef.current.cancel();
       }
+    }
+  };
+
+  const handleOrbClick = () => {
+    if (voiceState === "LISTENING") {
+      if (isNativeRecordingMode) {
+        stopNativeRecording();
+      } else {
+        recognitionRef.current?.stop();
+      }
+    } else if (voiceState === "SPEAKING") {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+      startListening();
+    } else if (isMuted || voiceState === "MUTED") {
+      toggleMute();
     }
   };
 
@@ -240,7 +489,17 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
           </>
         )}
         <div
-          className={`w-[130px] h-[130px] rounded-full bg-[radial-gradient(circle,var(--color-accent-cyan),var(--color-accent-purple),var(--color-accent-blue))] bg-[length:200%_200%] shadow-[0_0_40px_rgba(0,240,255,0.5),0_0_80px_rgba(199,125,255,0.3)] z-10 transition-all duration-500 ${
+          onClick={handleOrbClick}
+          role="button"
+          tabIndex={0}
+          title={
+            voiceState === "LISTENING"
+              ? "Click to finish speaking"
+              : voiceState === "SPEAKING"
+              ? "Click to mute/silence"
+              : "Click to resume listening"
+          }
+          className={`w-[130px] h-[130px] rounded-full bg-[radial-gradient(circle,var(--color-accent-cyan),var(--color-accent-purple),var(--color-accent-blue))] bg-[length:200%_200%] shadow-[0_0_40px_rgba(0,240,255,0.5),0_0_80px_rgba(199,125,255,0.3)] z-10 transition-all duration-500 cursor-pointer hover:scale-105 active:scale-95 ${
             voiceState === "LISTENING"
               ? "animate-orb-breathe"
               : voiceState === "THINKING"

@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Morning briefing",
+    "hour": 9,
+    "minute": 0,
+    "prompt": "Check for unread emails and summarize them."
+  }
+]
