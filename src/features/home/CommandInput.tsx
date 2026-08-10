@@ -27,23 +27,23 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick }) => {
 
   return (
     <form onSubmit={handleSubmit} className='w-full'>
-      <div className='relative overflow-hidden rounded-2xl border border-border-color bg-bg-tertiary p-[1px] shadow-[0_0_0_1px_rgba(255,255,255,0.02)] transition-all duration-300 focus-within:border-accent-cyan/70 focus-within:shadow-[0_0_20px_rgba(0,240,255,0.15)]'>
-        <div className='absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.18),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(124,58,237,0.18),_transparent_40%)] opacity-90' />
-        <div className='absolute inset-[-30%] animate-[spin_6s_linear_infinite] bg-[conic-gradient(from_0deg,transparent,rgba(0,240,255,0.35),transparent,rgba(168,85,247,0.3),transparent)] opacity-80' />
+      <div className='group relative overflow-hidden rounded-[22px] border border-border-color bg-bg-tertiary p-[1px] shadow-[0_0_0_1px_rgba(255,255,255,0.02)] transition-all duration-300 focus-within:border-accent-cyan/70 focus-within:shadow-[0_0_24px_rgba(0,240,255,0.2)]'>
+        <div className='absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.12),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(124,58,237,0.16),_transparent_38%)] opacity-100 transition-opacity duration-300 group-focus-within:opacity-100' />
+        <div className='absolute inset-[-30%] opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-focus-within:animate-[spin_7s_linear_infinite] bg-[conic-gradient(from_0deg,transparent,rgba(0,240,255,0.35),transparent,rgba(168,85,247,0.3),transparent)]' />
 
-        <div className='relative flex items-center gap-4 rounded-[15px] bg-bg-tertiary px-4 py-3'>
+        <div className='relative flex items-end gap-4 rounded-[18px] bg-bg-tertiary px-4 py-3'>
           <textarea
             id='cmd-input'
             value={input}
             onChange={(e) => setInput(e.currentTarget.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a prompt or task (e.g. 'List current files' or 'Find Senior Frontend roles')..."
+            placeholder='Type a prompt or task...'
             disabled={loading}
-            rows={1}
-            className='flex-1 resize-none border-none bg-transparent py-1 pr-2 font-sans text-sm leading-relaxed text-text-main placeholder:text-text-muted outline-none'
+            rows={4}
+            className='flex-1 min-h-[110px] max-h-[200px] resize-none border-none bg-transparent py-2 pr-2 font-sans text-sm leading-7 text-text-main placeholder:text-text-muted outline-none scrollbar-thin scrollbar-thumb-white/10'
           />
 
-          <div className='flex shrink-0 items-center gap-2.5'>
+          <div className='flex shrink-0 items-center gap-2.5 pb-1'>
             <Button
               type='button'
               variant='secondary'
