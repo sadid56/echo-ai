@@ -18,6 +18,18 @@ def get_system_browser_path():
         path = shutil.which(c)
         if path:
             return path
+
+    # macOS often installs Chrome as an app bundle instead of a shell command.
+    mac_candidates = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ]
+    for path in mac_candidates:
+        if os.path.exists(path):
+            return path
+
     return None
 
 class BrowserRunner:
