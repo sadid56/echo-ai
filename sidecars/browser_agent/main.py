@@ -12,8 +12,7 @@ def main():
     args = parser.parse_args()
 
     runner = BrowserRunner()
-    
-    # Self-heal local model argument confusion
+
     if not args.steps and not args.url and args.query:
         q_stripped = args.query.strip()
         if q_stripped.startswith("http://") or q_stripped.startswith("https://"):

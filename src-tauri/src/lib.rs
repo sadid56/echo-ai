@@ -146,10 +146,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Load environment variables from .env
-            let _ = dotenvy::dotenv();
-            
-            // Initialize config and chat history
+            // Initialize config and chat history without loading .env files
             let config = AppConfig::default();
             let memory = ChatMemory::new(20);
             

@@ -44,7 +44,7 @@ def main():
                 "from": "CEO <ceo@echo-corp.ai>",
                 "subject": "Urgent: Project Launch Timeline & LTS requirements",
                 "date": "Sun, 09 Aug 2026 11:20:00 +0600",
-                "snippet": "Hi Team, we need to ensure the local Ollama execution is tested and works fully on our client systems before..."
+                "snippet": "Hi Team, we need to ensure the rollout checklist and verification steps are complete before the release window..."
             })
         if args.filter == "FLAGGED" or args.filter == "ALL":
             mock_emails.append({

@@ -1,14 +1,14 @@
 # Echo AI - Enterprise Assistant Workspace
 
-Echo AI is an autonomous, multi-model AI desktop workspace built using **Tauri (Rust Core)**, **React (TypeScript Frontend)**, and **Python Automation Sidecars**. 
+Echo AI is an autonomous AI desktop workspace built using **Tauri (Rust Core)**, **React (TypeScript Frontend)**, and **Python Automation Sidecars**.
 
-It implements the **Provider Abstraction Pattern**, allowing you to swap active AI models (Gemini, OpenAI, Claude, and Local Ollama) on-the-fly at runtime without restarting the application.
+It supports multiple remote AI providers and lets you switch them at runtime from the app settings, while keeping all configuration in the app instead of environment files.
 
 ---
 
 ## 🚀 Key Features
 
-* **Provider Abstraction**: Decoupled interface supporting OpenAI (GPT-4o), Google Gemini (1.5 Flash), Anthropic Claude (3.5 Sonnet), and Local models (Ollama).
+* **Provider Abstraction**: Decoupled interface supporting OpenAI (GPT-4o), Google Gemini (1.5 Flash), Anthropic Claude (3.5 Sonnet), and GLM.
 * **Autonomous Function Loop**: The AI dynamically executes system and browser tools, loops their outputs back to the context window, and resolves tasks autonomously without prompting you for confirmation.
 * **Browser Automation Sidecar**: A Python agent that opens your system's browser, scrapes page contents, and filters search results.
 * **IMAP Email Reader Sidecar**: A secure Python script that queries your inbox for unread or flagged emails (includes a zero-setup simulated sandbox mode).
@@ -24,7 +24,7 @@ Before starting, make sure you have the following installed:
 1. **Rust & Cargo**: [Install Rustup](https://rustup.rs/) (Tauri core backend).
 2. **Node.js & pnpm**: [Install Node](https://nodejs.org/) and run `npm install -g pnpm`.
 3. **Python 3**: Ensure `python3` and `pip3` are available.
-4. **Ollama (Optional for offline use)**: [Download Ollama](https://ollama.com) (required to run fully local models).
+4. **API keys**: Add your chosen provider keys directly from the app settings panel.
 
 ---
 
@@ -37,32 +37,14 @@ pnpm install
 ```
 
 ### Step 2: Install Python Sidecar Requirements
-Install the scraping requirements for the browser agent:
+Install the shared Python dependencies used by the sidecars:
 ```bash
-pip3 install -r sidecars/browser_agent/requirements.txt
+pip3 install -r sidecars/requirements.txt
 ```
-*(No installs are needed for the email agent, as it utilizes Python's built-in `imaplib`)*
+*(No extra installs are needed for the email agent beyond Python's built-in `imaplib`)*
 
-### Step 3: Configure Environment Keys (Optional)
-You can configure your keys by creating a `.env` file in the root workspace directory:
-```env
-GEMINI_API_KEY=your_gemini_api_key
-OPENAI_API_KEY=your_openai_api_key
-CLAUDE_API_KEY=your_claude_api_key
-LOCAL_API_URL=http://localhost:11434
-```
-*Note: You can also configure all keys and prompts directly within the running application by clicking **⚙ Settings** (saved to Local Storage).*
-
----
-
-## 🤖 Running a Fully Local LLM (Ollama)
-
-1. Launch the **Ollama** application on your machine.
-2. In your terminal, pull your preferred model. We highly recommend `llama3-groq-tool-use` for optimal JSON argument generation:
-   ```bash
-   ollama run llama3-groq-tool-use
-   ```
-3. Open the **⚙ Settings** modal in Echo AI, select **Local / Ollama** as your active provider, verify the port `http://localhost:11434`, and click **Save Config**.
+### Step 3: Add API Keys in the App
+Open the **⚙ Settings** modal in Echo AI and enter the API key for your selected provider. These values are saved in the app's local configuration and do not require any `.env` file.
 
 ---
 

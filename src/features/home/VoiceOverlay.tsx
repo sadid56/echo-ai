@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useChatStore } from "../store/chatStore";
+import { useChatStore } from "../../store/chatStore";
 
 // TypeScript declarations for Web Speech API
 interface SpeechRecognitionEvent extends Event {

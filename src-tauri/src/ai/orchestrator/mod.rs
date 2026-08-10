@@ -1,8 +1,6 @@
 use crate::ai::providers::{AiProvider, Message, Role};
 use crate::ai::providers::gemini::GeminiProvider;
 use crate::ai::providers::openai::OpenAiProvider;
-use crate::ai::providers::claude::ClaudeProvider;
-use crate::ai::providers::local::LocalProvider;
 use crate::ai::providers::glm::GlmProvider;
 use crate::ai::tools;
 use crate::utils::config::AppConfig;
@@ -103,22 +101,14 @@ impl Orchestrator {
                     if key.is_empty() { return Err("OpenAI API key is empty.".to_string()); }
                     OpenAiProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
                 }
-                "Claude" => {
-                    let key = config.api_keys.claude.clone();
-                    if key.is_empty() { return Err("Claude API key is empty.".to_string()); }
-                    ClaudeProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
-                }
                 "GLM" => {
                     let key = config.api_keys.glm.clone();
+                    let model = config.api_keys.glm_model.clone();
                     if key.is_empty() { return Err("GLM API key is empty.".to_string()); }
-                    GlmProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
+                    let payload = format!("{}|{}", key, model);
+                    GlmProvider.generate_response(&current_prompt, &history, &available_tools, &payload).await?
                 }
-                "Local" | _ => {
-                    let url = config.api_keys.local_url.clone();
-                    let model = config.api_keys.local_model.clone();
-                    let payload = format!("{}|{}", url, model);
-                    LocalProvider.generate_response(&current_prompt, &history, &available_tools, &payload).await?
-                }
+                _ => return Err(format!("Unsupported model '{active_model}' selected. Please choose a provider that has a valid API key configured.")),
             };
 
             // Detect duplicate tool call loop

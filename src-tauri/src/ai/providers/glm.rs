@@ -14,6 +14,12 @@ impl AiProvider for GlmProvider {
         api_key: &str,
     ) -> Result<ProviderResponse, String> {
         let url = "https://api.z.ai/api/paas/v4/chat/completions";
+        let (api_key, model_name) = if api_key.contains('|') {
+            let parts: Vec<&str> = api_key.splitn(2, '|').collect();
+            (parts[0], parts[1])
+        } else {
+            (api_key, "glm-4.5-flash")
+        };
 
         let mut messages = Vec::new();
 
@@ -64,7 +70,7 @@ impl AiProvider for GlmProvider {
         }
 
         let mut body = json!({
-            "model": "glm-4.5-flash",
+            "model": model_name,
             "messages": messages
         });
 

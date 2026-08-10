@@ -58,10 +58,6 @@ pub async fn run_python_agent(
         script_path.push("main.py");
     }
 
-    if !script_path.exists() {
-        // Fallback to absolute workspace path
-        script_path = PathBuf::from("/Users/sadid/Works/projects/echo-ai/sidecars/browser_agent/main.py");
-    }
 
     let script_str = script_path.to_string_lossy().to_string();
     
@@ -105,15 +101,12 @@ pub async fn run_python_agent(
 
     // Read stdout line-by-line in real-time
     while let Ok(Some(line)) = reader.next_line().await {
-        // Stream the raw log line to frontend for terminal visibility
         let log_msg = format!("[Python] {}", line);
         let _ = app.emit("sidecar-log", log_msg);
 
-        // Keep track of the full stdout
         final_output.push_str(&line);
         final_output.push('\n');
 
-        // Check if the line is a JSON result (often at the end)
         if line.trim().starts_with('{') && line.trim().ends_with('}') {
             last_json = line.clone();
             return Ok(last_json);
@@ -154,9 +147,7 @@ pub async fn run_email_agent(
         script_path.push("fetch_emails.py");
     }
 
-    if !script_path.exists() {
-        script_path = PathBuf::from("/Users/sadid/Works/projects/echo-ai/sidecars/email_agent/fetch_emails.py");
-    }
+
 
     let script_str = script_path.to_string_lossy().to_string();
     

@@ -77,7 +77,7 @@ class BrowserRunner:
             self.log("[Err] Playwright library not found. Run pip3 install playwright.")
             return {
                 "success": False,
-                "error": "Playwright library is missing. Install using: pip3 install -r sidecars/browser_agent/requirements.txt"
+                "error": "Playwright library is missing. Install using: pip3 install -r sidecars/requirements.txt"
             }
 
         try:

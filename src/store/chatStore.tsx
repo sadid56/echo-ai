@@ -5,10 +5,8 @@ import { listen } from "@tauri-apps/api/event";
 export interface ApiKeys {
   gemini: string;
   openai: string;
-  claude: string;
   glm: string;
-  local_url: string;
-  local_model: string;
+  glm_model: string;
 }
 
 export interface EmailConfig {
@@ -66,10 +64,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const saved = localStorage.getItem("echo_ai_config");
       if (saved) {
         let parsed: AppConfig = JSON.parse(saved);
-        if (!parsed.api_keys.local_model || parsed.api_keys.local_model === "llama3-groq-tool-use" || parsed.api_keys.local_model === "qwen2.5-coder:3b") {
-          parsed.api_keys.local_model = "qwen2.5-coder:1.5b";
-          localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
-        }
         if (parsed.api_keys.glm === undefined) {
           parsed.api_keys.glm = "";
           localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
