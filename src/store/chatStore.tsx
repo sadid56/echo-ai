@@ -6,6 +6,7 @@ export interface ApiKeys {
   gemini: string;
   openai: string;
   claude: string;
+  glm: string;
   local_url: string;
   local_model: string;
 }
@@ -67,6 +68,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         let parsed: AppConfig = JSON.parse(saved);
         if (!parsed.api_keys.local_model || parsed.api_keys.local_model === "llama3-groq-tool-use" || parsed.api_keys.local_model === "qwen2.5-coder:3b") {
           parsed.api_keys.local_model = "qwen2.5-coder:1.5b";
+          localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
+        }
+        if (parsed.api_keys.glm === undefined) {
+          parsed.api_keys.glm = "";
           localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
         }
         // Self-heal: If prompt is outdated, reload the new default from config.rs

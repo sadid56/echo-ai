@@ -11,6 +11,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
   const [geminiKey, setGeminiKey] = useState("");
   const [openaiKey, setOpenaiKey] = useState("");
   const [claudeKey, setClaudeKey] = useState("");
+  const [glmKey, setGlmKey] = useState("");
   const [localUrl, setLocalUrl] = useState("");
   const [localModel, setLocalModel] = useState("qwen2.5-coder:3b");
   const [sysPrompt, setSysPrompt] = useState("");
@@ -28,6 +29,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
       setGeminiKey(config.api_keys.gemini);
       setOpenaiKey(config.api_keys.openai);
       setClaudeKey(config.api_keys.claude);
+      setGlmKey(config.api_keys.glm || "");
       setLocalUrl(config.api_keys.local_url);
       setLocalModel(config.api_keys.local_model || "llama3-groq-tool-use");
       setSysPrompt(config.system_prompt);
@@ -49,6 +51,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
         gemini: geminiKey,
         openai: openaiKey,
         claude: claudeKey,
+        glm: glmKey,
         local_url: localUrl,
         local_model: localModel,
       },
@@ -93,6 +96,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                 <option value="Gemini">Gemini 1.5 Flash (Google)</option>
                 <option value="OpenAI">GPT-4o (OpenAI)</option>
                 <option value="Claude">Claude 3.5 Sonnet (Anthropic)</option>
+                <option value="GLM">GLM-4 Flash (Zhipu AI)</option>
               </select>
             </div>
           </div>
@@ -131,6 +135,18 @@ export const SettingsModal: FC<SettingsModalProps> = ({ onClose }) => {
                   value={claudeKey}
                   onChange={(e: React.ChangeEvent<any>) => setClaudeKey(e.currentTarget.value)}
                   placeholder="sk-proj-..."
+                  className="bg-bg-tertiary border border-border-color focus:border-accent-cyan/60 text-text-main text-sm font-sans px-3 py-2.5 rounded-lg outline-none transition-all"
+                />
+              </div>
+            )}
+            {model === "GLM" && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-text-muted uppercase tracking-wider font-sans">GLM API Key</label>
+                <input
+                  type="password"
+                  value={glmKey}
+                  onChange={(e: React.ChangeEvent<any>) => setGlmKey(e.currentTarget.value)}
+                  placeholder="9fc193..."
                   className="bg-bg-tertiary border border-border-color focus:border-accent-cyan/60 text-text-main text-sm font-sans px-3 py-2.5 rounded-lg outline-none transition-all"
                 />
               </div>

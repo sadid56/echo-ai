@@ -6,6 +6,7 @@ pub struct ApiKeys {
     pub gemini: String,
     pub openai: String,
     pub claude: String,
+    pub glm: String,
     pub local_url: String,
     pub local_model: String,
 }
@@ -19,7 +20,7 @@ pub struct EmailConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
-    pub active_model: String, // "Gemini" | "OpenAI" | "Claude" | "Local"
+    pub active_model: String, // "Gemini" | "OpenAI" | "Claude" | "GLM" | "Local"
     pub api_keys: ApiKeys,
     pub system_prompt: String,
     pub ai_name: String,
@@ -35,6 +36,7 @@ impl Default for AppConfig {
                 gemini: env::var("GEMINI_API_KEY").unwrap_or_default(),
                 openai: env::var("OPENAI_API_KEY").unwrap_or_default(),
                 claude: env::var("CLAUDE_API_KEY").unwrap_or_default(),
+                glm: env::var("GLM_API_KEY").unwrap_or_default(),
                 local_url: env::var("LOCAL_API_URL").unwrap_or_else(|_| "http://localhost:11434".to_string()),
                 local_model: env::var("LOCAL_MODEL").unwrap_or_else(|_| "qwen2.5-coder:1.5b".to_string()),
             },

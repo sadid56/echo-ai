@@ -3,6 +3,7 @@ use crate::ai::providers::gemini::GeminiProvider;
 use crate::ai::providers::openai::OpenAiProvider;
 use crate::ai::providers::claude::ClaudeProvider;
 use crate::ai::providers::local::LocalProvider;
+use crate::ai::providers::glm::GlmProvider;
 use crate::ai::tools;
 use crate::utils::config::AppConfig;
 use crate::ai::memory::ChatMemory;
@@ -106,6 +107,11 @@ impl Orchestrator {
                     let key = config.api_keys.claude.clone();
                     if key.is_empty() { return Err("Claude API key is empty.".to_string()); }
                     ClaudeProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
+                }
+                "GLM" => {
+                    let key = config.api_keys.glm.clone();
+                    if key.is_empty() { return Err("GLM API key is empty.".to_string()); }
+                    GlmProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
                 }
                 "Local" | _ => {
                     let url = config.api_keys.local_url.clone();

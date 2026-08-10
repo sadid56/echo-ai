@@ -2,6 +2,7 @@ pub mod gemini;
 pub mod openai;
 pub mod claude;
 pub mod local;
+pub mod glm;
 
 use serde::{Serialize, Deserialize};
 
