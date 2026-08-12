@@ -142,10 +142,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       const errMsg = String(err);
       addLog(`Orchestrator error: ${errMsg}`);
+      const friendlyMessage =
+        errMsg.includes("repeated tool loop") || errMsg.includes("Maximum tool execution loops reached")
+          ? "⚠️ I stopped after a repeated tool cycle to avoid looping. Please try a smaller or clearer task."
+          : `⚠️ ${errMsg}`;
+
       const errMessageObj: Message = {
         id: Math.random().toString(36).substring(7),
         role: "assistant",
-        content: `❌ **Error**: ${errMsg}`,
+        content: friendlyMessage,
         timestamp: new Date().toLocaleTimeString(),
       };
       setMessages((prev) => [...prev, errMessageObj]);

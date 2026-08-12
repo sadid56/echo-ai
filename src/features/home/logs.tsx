@@ -1,6 +1,12 @@
+import type { Dispatch, SetStateAction } from "react";
 import { ChevronRight } from "lucide-react";
 
-const Logs = ({ setShowLogs, recentLogs }) => {
+type LogsProps = {
+  setShowLogs: Dispatch<SetStateAction<boolean>>;
+  recentLogs: string[];
+};
+
+const Logs = ({ setShowLogs, recentLogs }: LogsProps) => {
   return (
     <aside className='w-[420px] h-full border-l border-border-color bg-[#0b1017] backdrop-blur-md flex flex-col animate-slide-left z-20 shrink-0'>
       <div className='flex items-center justify-between px-4 py-3 border-b border-border-color bg-[#101820]'>

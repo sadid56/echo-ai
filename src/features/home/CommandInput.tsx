@@ -27,11 +27,12 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick }) => {
 
   return (
     <form onSubmit={handleSubmit} className='w-full'>
-      <div className='group relative overflow-hidden rounded-[22px] border border-border-color bg-bg-tertiary p-[1px] shadow-[0_0_0_1px_rgba(255,255,255,0.02)] transition-all duration-300 focus-within:border-accent-cyan/70 focus-within:shadow-[0_0_24px_rgba(0,240,255,0.2)]'>
-        <div className='absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(0,240,255,0.12),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(124,58,237,0.16),_transparent_38%)] opacity-100 transition-opacity duration-300 group-focus-within:opacity-100' />
-        <div className='absolute inset-[-30%] opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-focus-within:animate-[spin_7s_linear_infinite] bg-[conic-gradient(from_0deg,transparent,rgba(0,240,255,0.35),transparent,rgba(168,85,247,0.3),transparent)]' />
+      <div className='group relative rounded-[22px] p-[1px] transition-all duration-300 bg-transparent shadow-none focus-within:shadow-[0_0_20px_rgba(0,240,255,0.15)]'>
+        {/* Animated minimal border overlay - fades in only when input is focused */}
+        <div className='absolute inset-0 rounded-[22px] bg-gradient-to-r from-accent-cyan/80 to-accent-purple/80 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none' />
 
-        <div className='relative flex items-end gap-4 rounded-[18px] bg-bg-tertiary px-4 py-3'>
+        {/* Content surface — sits above, hiding the center of the gradient to leave a 1px border */}
+        <div className='relative flex items-end gap-4 rounded-[21px] bg-bg-tertiary px-4 py-3'>
           <textarea
             id='cmd-input'
             value={input}
@@ -56,7 +57,14 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick }) => {
               <span>Clear</span>
             </Button>
 
-            <Button type='button' variant='secondary' size='sm' onClick={onVoiceClick} title='Start Live Voice Talking Mode'>
+            <Button
+              className='gap-2 px-3 py-[9px]'
+              type='button'
+              variant='secondary'
+              size='sm'
+              onClick={onVoiceClick}
+              title='Start Live Voice Talking Mode'
+            >
               <Mic className='h-4 w-4' />
             </Button>
 

@@ -73,7 +73,7 @@ impl Orchestrator {
         loop {
             loop_count += 1;
             if loop_count > MAX_LOOPS {
-                let err_msg = "Maximum tool execution loops reached (5). Stopping to prevent infinite execution.".to_string();
+                let err_msg = "I hit a repeated tool loop while processing your request and stopped to avoid an infinite cycle. Please rephrase the task or ask for a smaller step.".to_string();
                 let _ = app.emit("sidecar-log", format!("[Orchestrator Err] {}", err_msg));
                 return Err(err_msg);
             }
