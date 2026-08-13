@@ -4,54 +4,70 @@ const getRandomItem = <T>(arr: T[]): T => {
 
 export const LOADER_MESSAGES = {
   thinking: [
-    "Thinking, my friend...",
-    "Analyzing your request, buddy...",
-    "Hmm, let me think about that...",
-    "Figuring it out for you, friend...",
+    "Thinking...",
+    "Analyzing your request...",
     "Pondering the solution...",
-    "Just a second, mapping out the plan...",
+    "Mapping out the plan...",
   ],
   clicking: [
-    "🖱️ Clicking that button on the webpage...",
-    "🖱️ Clicking a link for you, my friend...",
-    "🖱️ Selecting the element, buddy...",
     "🖱️ Clicking page element...",
+    "🖱️ Selecting page element...",
+    "🖱️ Performing click action...",
   ],
   typing: [
-    "⌨️ Entering text & searching webpage...",
-    "⌨️ Typing search query, my friend...",
-    "⌨️ Entering search keywords, buddy...",
-    "⌨️ Typing query for you, mate!",
+    "⌨️ Entering text...",
+    "⌨️ Entering search keywords...",
+    "⌨️ Typing query...",
   ],
   scrolling: [
-    "📜 Scrolling webpage...",
-    "📜 Scanning down the page, buddy...",
-    "📜 Checking further down, my friend...",
-    "📜 Scrolling to find more information...",
+    "📜 Scrolling page...",
+    "📜 Scanning page content...",
+    "📜 Scrolling to find information...",
   ],
   navigating: [
-    "🌐 Navigating webpage...",
-    "🌐 Opening the webpage for you, friend...",
-    "🌐 Loading URL, buddy...",
-    "🌐 Browsing the web, mate...",
+    "🌐 Navigating to website...",
+    "🌐 Opening page...",
+    "🌐 Loading URL...",
   ],
   screenshot: [
     "📸 Capturing browser screenshot...",
-    "📸 Snapping a screenshot of the page, friend...",
-    "📸 Saving page snapshot, buddy...",
+    "📸 Snapping a screenshot of the page...",
+    "📸 Saving page snapshot...",
   ],
   fetch_emails: [
     "📬 Fetching email messages...",
-    "📬 Retrieving emails for you, friend...",
-    "📬 Checking inbox, buddy...",
-    "📬 Scanning your mail server...",
+    "📬 Checking inbox...",
+    "📬 Scanning mail server...",
   ],
-  list_directory: ["📁 Scanning directory structure...", "📁 Listing folder contents, my friend...", "📁 Checking folder files, buddy..."],
-  run_git_action: ["🛠️ Performing Git action...", "🛠️ Running Git version control action, buddy...", "🛠️ Saving git state, friend..."],
-  tool_success: ["✅ Processing results...", "✅ Tool completed successfully, friend!", "✅ Got the output, buddy..."],
-  tool_error: ["⚠️ Recovering from tool error...", "⚠️ Encountered an issue, self-healing now, friend...", "⚠️ Recovering steps, buddy..."],
-  planning: ["🧠 Planning next action...", "🧠 Deciding what to do next, my friend...", "🧠 Figuring out the next step, buddy..."],
-  generic_processing: ["Processing request...", "Working on it, my friend...", "Getting things done, buddy..."],
+  list_directory: [
+    "📁 Scanning directory structure...",
+    "📁 Listing folder contents...",
+    "📁 Checking folder files...",
+  ],
+  run_git_action: [
+    "🛠️ Performing Git action...",
+    "🛠️ Executing Git action...",
+    "🛠️ Saving Git changes...",
+  ],
+  tool_success: [
+    "✅ Processing results...",
+    "✅ Tool completed successfully.",
+    "✅ Tool execution complete.",
+  ],
+  tool_error: [
+    "⚠️ Recovering from error...",
+    "⚠️ Encountered an issue, self-healing...",
+    "⚠️ Recovering execution...",
+  ],
+  planning: [
+    "🧠 Planning next action...",
+    "🧠 Deciding next action...",
+    "🧠 Planning next steps...",
+  ],
+  generic_processing: [
+    "Processing request...",
+    "Working on it...",
+  ],
 };
 
 const messageCache: Record<string, string> = {};
@@ -68,27 +84,27 @@ export const getFriendlyMessage = (category: keyof typeof LOADER_MESSAGES, cache
 
 export const getToolMessage = (toolName: string, args: any): string => {
   if (toolName === "run_browser_agent" && args.task) {
-    return `🌐 Browsing: "${args.task}" for you, my friend...`;
+    return `🌐 Browsing: "${args.task}"...`;
   }
   if (toolName === "execute_command" && args.command) {
-    return `💻 Running command: "${args.command}", buddy...`;
+    return `💻 Running command: "${args.command}"...`;
   }
   if (toolName === "read_file" && args.path) {
     const filename = args.path.split(/[/\\]/).pop();
-    return `📖 Reading file: ${filename}, my friend...`;
+    return `📖 Reading file: ${filename}...`;
   }
   if (toolName === "write_file" && args.path) {
     const filename = args.path.split(/[/\\]/).pop();
-    return `✏️ Editing file: ${filename}, buddy...`;
+    return `✏️ Editing file: ${filename}...`;
   }
   if (toolName === "list_directory" && args.path) {
-    return `📁 Scanning directory: ${args.path}, friend...`;
+    return `📁 Scanning directory: ${args.path}...`;
   }
 
   // Fallbacks
-  if (toolName === "run_browser_agent") return "🌐 Launching browser assistant, buddy...";
+  if (toolName === "run_browser_agent") return "🌐 Launching browser assistant...";
   if (toolName === "execute_command") return "💻 Executing terminal command...";
-  if (toolName === "read_file") return "📖 Reading file contents, friend...";
+  if (toolName === "read_file") return "📖 Reading file contents...";
   if (toolName === "write_file") return "✏️ Writing modifications to file...";
 
   return `🛠️ Running tool: ${toolName}...`;

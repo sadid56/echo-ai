@@ -12,13 +12,16 @@ use tauri::image::Image;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
+use crate::ai::providers::Attachment;
+
 #[tauri::command]
 async fn send_prompt(
     app: AppHandle,
     state: State<'_, AppState>,
     prompt: String,
+    attachments: Option<Vec<Attachment>>,
 ) -> Result<String, String> {
-    crate::ai::orchestrator::Orchestrator::process_prompt(app, &state, &prompt).await
+    crate::ai::orchestrator::Orchestrator::process_prompt(app, &state, &prompt, attachments).await
 }
 
 #[tauri::command]
@@ -169,7 +172,7 @@ pub fn run() {
             let show_i = MenuItem::with_id(app, "show", "Show Main Window", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
 
-            let icon_bytes = include_bytes!("../icons/32x32.png");
+            let icon_bytes = include_bytes!("../icons/tray.png"); // force rebuild for new bold tray icon
             let icon = Image::from_bytes(icon_bytes)?;
 
             let _tray = TrayIconBuilder::new()

@@ -1,4 +1,4 @@
-use crate::ai::providers::{Message, ToolDefinition, ProviderResponse, ToolCall, Role};
+use crate::ai::providers::{Message, ToolDefinition, ProviderResponse, ToolCall, Role, Attachment};
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -14,6 +14,8 @@ impl OpenAiCompatibleProvider {
         prompt: &str,
         history: &[Message],
         tools: &[ToolDefinition],
+        max_tokens: Option<u32>,
+        attachments: Option<&Vec<Attachment>>,
     ) -> Result<ProviderResponse, String> {
         let mut messages = Vec::new();
 
@@ -57,16 +59,54 @@ impl OpenAiCompatibleProvider {
 
         // Push current prompt if not empty
         if !prompt.is_empty() {
-            messages.push(json!({
-                "role": "user",
-                "content": prompt
-            }));
+            if let Some(atts) = attachments {
+                if !atts.is_empty() {
+                    let mut content_array = Vec::new();
+                    
+                    // Add text prompt
+                    content_array.push(json!({
+                        "type": "text",
+                        "text": prompt
+                    }));
+                    
+                    // Add image attachments
+                    for att in atts {
+                        if att.mime_type.starts_with("image/") {
+                            content_array.push(json!({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": format!("data:{};base64,{}", att.mime_type, att.data)
+                                }
+                            }));
+                        }
+                    }
+                    
+                    messages.push(json!({
+                        "role": "user",
+                        "content": content_array
+                    }));
+                } else {
+                    messages.push(json!({
+                        "role": "user",
+                        "content": prompt
+                    }));
+                }
+            } else {
+                messages.push(json!({
+                    "role": "user",
+                    "content": prompt
+                }));
+            }
         }
 
         let mut body = json!({
             "model": model_name,
             "messages": messages
         });
+
+        if let Some(tokens) = max_tokens {
+            body["max_tokens"] = json!(tokens);
+        }
 
         // Tools
         if !tools.is_empty() {

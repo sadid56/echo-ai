@@ -55,7 +55,7 @@ pub fn start_clipboard_helper(app: AppHandle) {
                 
                 tauri::async_runtime::spawn(async move {
                     if let Some(state) = app_clone.try_state::<AppState>() {
-                        match Orchestrator::process_prompt(app_clone.clone(), &state, &prompt).await {
+                        match Orchestrator::process_prompt(app_clone.clone(), &state, &prompt, None).await {
                             Ok(res) => {
                                 // Extract code blocks or just copy response back
                                 let clean_solution = extract_code_or_full_text(&res);

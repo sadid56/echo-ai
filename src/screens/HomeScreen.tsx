@@ -1,21 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Bot, Sparkles } from "lucide-react";
+import { Bot, Sparkles, File } from "lucide-react";
 import { CommandInput } from "../features/home/CommandInput";
 import { VoiceOverlay } from "../features/home/VoiceOverlay";
 import { useChatStore } from "../store/chatStore";
 import Logs from "../features/home/logs";
-import Header from "../layouts/header";
 import { Drawer } from "../components/ui/drawer";
 import { getFriendlyMessage, getToolMessage } from "../lib/loaderMessages";
 import { CustomMarkdown } from "../components/common/custom-markdown";
+import { FlipWords } from "../components/ui/flipWords";
 
 export function HomeScreen() {
   const [showVoice, setShowVoice] = useState(false);
-  const [showLogs, setShowLogs] = useState(false);
-  const { config, messages, logs, loading } = useChatStore();
+  const { config, messages, logs, loading, showLogs, setShowLogs } = useChatStore();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const words = ["AI assistant", "code wizard", "dev companion", "smart copilot", "agentic helper"];
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -27,42 +26,29 @@ export function HomeScreen() {
   const recentLogs = logs.slice(-10).reverse();
 
   return (
-    <div className='flex flex-col h-screen bg-[#08080a] text-text-main relative overflow-hidden'>
-      {/* Dynamic Ambient Background Grid & Glows */}
-      <div className='absolute inset-0 z-0 pointer-events-none'>
-        <div className='absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-accent-cyan/5 blur-[150px] mix-blend-screen' />
-        <div className='absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-accent-purple/5 blur-[120px] mix-blend-screen' />
-        <div className='absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20' />
-      </div>
-
-      <div className='relative z-20'>
-        <Header showLogs={showLogs} setShowLogs={setShowLogs} />
-      </div>
-
-      <div className='flex flex-1 overflow-hidden relative z-10'>
-        <main className='flex flex-col flex-1 overflow-hidden relative'>
-          <div ref={scrollRef} className='flex-1 overflow-y-auto px-4 py-8 md:px-12 pb-[240px] scroll-smooth'>
+    <>
+      <main className='flex flex-col flex-1 overflow-hidden relative'>
+        <div ref={scrollRef} className='flex-1 overflow-y-auto px-4 py-8 md:px-12 pb-[240px] scroll-smooth'>
             {messages.length === 0 ? (
               /* PREVIOUS SWEET SPOT AI CORE */
               <div className='flex h-full flex-col items-center justify-center space-y-12 animate-in fade-in zoom-in-95 duration-1000'>
                 <div className='relative flex h-40 w-40 items-center justify-center group'>
-                  <div className='absolute inset-0 rounded-full bg-accent-cyan/15 blur-[40px] animate-pulse'></div>
+                  <div className='absolute inset-0 rounded-full bg-accent-cyan/15 blur-[40px]'></div>
                   <div className='absolute inset-0 rounded-full border border-white/5 border-t-accent-cyan/80 animate-[spin_10s_linear_infinite]'></div>
                   <div className='absolute inset-4 rounded-full border border-white/5 border-b-accent-purple/60 animate-[spin_15s_linear_infinite_reverse]'></div>
                   <div className='absolute inset-8 rounded-full border border-dashed border-white/20 animate-[spin_20s_linear_infinite]'></div>
-                  <div className='relative h-16 w-16 rounded-full bg-gradient-to-br from-accent-cyan/50 to-accent-purple/50 p-[1px] shadow-[0_0_30px_rgba(0,240,255,0.3)] transition-transform duration-500 group-hover:scale-110'>
+                  <div className='relative h-18 w-18 rounded-full bg-gradient-to-br from-accent-cyan/50 to-accent-purple/50 p-[1px] shadow-[0_0_30px_rgba(0,240,255,0.3)] transition-transform duration-500 group-hover:scale-110'>
                     <div className='h-full w-full rounded-full bg-[#0a0a0c] flex items-center justify-center overflow-hidden relative'>
-                      <div className='absolute inset-0 bg-accent-cyan/10 animate-pulse'></div>
-                      <Bot className='h-7 w-7 text-accent-cyan z-10' />
+                      <img src="/echo_logo.png" alt="Echo AI" className="h-full w-full object-cover z-10 rounded-full" />
                     </div>
                   </div>
                 </div>
 
-                <div className='text-center space-y-4 z-10'>
-                  <h1 className='text-4xl md:text-5xl font-light tracking-tight text-white/90 drop-shadow-md'>Good afternoon.</h1>
-                  <p className='text-md text-white/50 font-light max-w-sm mx-auto tracking-wide'>
-                    I'm Echo. Let's build something, search the web, or just talk.
-                  </p>
+                 <div className='text-center space-y-4 z-10'>
+                  <h1 className='text-2xl font-light tracking-tight text-white/90 drop-shadow-md min-h-[36px]'>
+                    Echo is your personal{" "}
+                    <FlipWords duration={3000} words={words} className='text-accent-cyan font-medium w-[130px] inline-block text-left whitespace-nowrap' />
+                  </h1>
                 </div>
               </div>
             ) : (
@@ -77,8 +63,31 @@ export function HomeScreen() {
                       <div className='group relative max-w-[85%] md:max-w-[75%]'>
                         <div className='absolute inset-0 bg-gradient-to-br from-accent-purple/10 to-accent-cyan/5 rounded-2xl rounded-tr-sm blur-md opacity-50'></div>
 
-                        <div className='text-[15px] leading-relaxed font-light'>
+                        <div className='text-[15px] leading-relaxed font-light relative z-10 p-4 bg-white/[0.02] border border-white/5 rounded-2xl rounded-tr-sm'>
                           <CustomMarkdown content={message.content} />
+
+                          {/* Message Attachments rendering */}
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className='flex flex-wrap gap-2 mt-3 pt-2.5 border-t border-white/5'>
+                              {message.attachments.map((att, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className='flex items-center gap-1.5 px-2.5 py-1 bg-white/[0.03] border border-white/10 rounded-xl text-[11px] text-text-muted'
+                                >
+                                  {att.mime_type.startsWith("image/") ? (
+                                    <img 
+                                      src={`data:${att.mime_type};base64,${att.data}`} 
+                                      alt={att.name} 
+                                      className='w-5 h-5 rounded object-cover' 
+                                    />
+                                  ) : (
+                                    <File className='w-3.5 h-3.5 text-accent-cyan' />
+                                  )}
+                                  <span className='max-w-[100px] truncate'>{att.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -182,24 +191,17 @@ export function HomeScreen() {
               <div className='shadow-[0_0_40px_rgba(0,0,0,0.5)] rounded-[22px]'>
                 <CommandInput onVoiceClick={() => setShowVoice(true)} />
               </div>
-
-              <div className='flex justify-center items-center px-2'>
-                <p className='text-[11px] font-light text-white/30 tracking-wide'>
-                  Echo can make mistakes. Consider verifying important information.
-                </p>
-              </div>
             </div>
           </div>
         </main>
-      </div>
 
       <Drawer open={showLogs} onOpenChange={setShowLogs}>
         <div className='flex-1 flex flex-col min-h-0 bg-[#08080a]/95 backdrop-blur-xl p-4 border-l border-white/5 shadow-2xl'>
-          <Logs recentLogs={recentLogs} setShowLogs={setShowLogs} />
+          <Logs recentLogs={recentLogs} setShowLogs={(val) => setShowLogs(typeof val === 'function' ? val(showLogs) : val)} />
         </div>
       </Drawer>
 
       {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} />}
-    </div>
+    </>
   );
 }

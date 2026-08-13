@@ -14,11 +14,14 @@ pub struct AppState {
 
 pub struct Orchestrator;
 
+use crate::ai::providers::Attachment;
+
 impl Orchestrator {
     pub async fn process_prompt(
         app: AppHandle,
         state: &AppState,
         prompt: &str,
+        attachments: Option<Vec<Attachment>>,
     ) -> Result<String, String> {
         let (config, mut system_prompt) = {
             let conf = state.config.lock().unwrap();
@@ -93,13 +96,21 @@ impl Orchestrator {
                 return Err(format!("API key is empty for text provider '{}'. Please configure it in Settings.", config.text_model.provider_name));
             }
 
+            let initial_attachments = if loop_count == 1 {
+                attachments.as_ref()
+            } else {
+                None
+            };
+
             let mut response = OpenAiCompatibleProvider.generate_response(
                 &endpoint,
                 &key,
                 &model,
                 &current_prompt,
                 &history,
-                &available_tools
+                &available_tools,
+                config.text_model.max_tokens,
+                initial_attachments,
             ).await?;
 
             if let Some(ref tcs) = response.tool_calls {

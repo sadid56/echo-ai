@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "../../lib/cn";
 import { Button } from "./button";
 
@@ -25,8 +26,8 @@ export function Dialog({ open, onClose, title, description, children, className 
 
   if (!open) return null;
 
-  return (
-    <div className='fixed inset-0 z-50'>
+  return createPortal(
+    <div className='fixed inset-0 z-55'>
       <div className='fixed inset-0 bg-black/60 backdrop-blur-md animate-dialog-fade-in' onClick={onClose} />
 
       <div className='fixed inset-0 flex items-center justify-center p-4 pointer-events-none'>
@@ -46,7 +47,8 @@ export function Dialog({ open, onClose, title, description, children, className 
           <div className='text-xs text-text-main leading-relaxed mb-5'>{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

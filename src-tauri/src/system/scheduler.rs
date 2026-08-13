@@ -100,7 +100,7 @@ pub fn start_scheduler(app: AppHandle) {
                     let prompt = task.prompt.clone();
                     tauri::async_runtime::spawn(async move {
                         if let Some(state) = app_clone.try_state::<AppState>() {
-                            match Orchestrator::process_prompt(app_clone.clone(), &state, &prompt).await {
+                            match Orchestrator::process_prompt(app_clone.clone(), &state, &prompt, None).await {
                                 Ok(res) => {
                                     let _ = app_clone.emit("sidecar-log", format!("[Scheduler Success] Completed routine for '{}'. Output length: {}", task.name, res.len()));
                                 }

@@ -7,6 +7,8 @@ export interface ModelConfig {
   api_endpoint: string;
   api_key: string;
   model_name: string;
+  max_tokens?: number | null;
+  models?: string[];
 }
 
 export interface EmailConfig {
@@ -41,22 +43,32 @@ export interface AppConfig {
   schedule: ScheduledTask[];
 }
 
+export interface Attachment {
+  name: string;
+  mime_type: string;
+  data: string; // base64 encoded data
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system" | "tool";
   content: string;
   model?: string;
   timestamp: string;
+  attachments?: Attachment[];
 }
 
 interface ChatStore {
   messages: Message[];
   logs: string[];
   config: AppConfig | null;
+  showLogs: boolean;
+  setShowLogs: (show: boolean) => void;
   loading: boolean;
   addLog: (log: string) => void;
   clearLogs: () => void;
-  sendMessage: (prompt: string) => Promise<void>;
+  sendMessage: (prompt: string, attachments?: Attachment[]) => Promise<void>;
+  stopChat: () => void;
   updateConfig: (newConfig: AppConfig) => Promise<void>;
   clearChat: () => Promise<void>;
   refreshConfig: () => Promise<void>;
@@ -67,6 +79,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   logs: [],
   config: null,
   loading: false,
+  showLogs: false,
+  setShowLogs: (show: boolean) => set({ showLogs: show }),
 
   addLog: (log: string) => {
     set((state) => ({
@@ -92,8 +106,29 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           return;
         }
 
-        // Self-heal new productivity settings fields
+        // Self-heal new max_tokens settings fields
         let dirty = false;
+        if (parsed.text_model && parsed.text_model.max_tokens === undefined) {
+          parsed.text_model.max_tokens = 4096;
+          dirty = true;
+        }
+        if (parsed.text_model && parsed.text_model.models === undefined) {
+          parsed.text_model.models = [
+            "google/gemini-2.5-flash",
+            "google/gemini-2.5-pro",
+            "meta-llama/llama-3-70b-instruct",
+            "deepseek/deepseek-chat"
+          ];
+          dirty = true;
+        }
+        if (parsed.transcribe_model && parsed.transcribe_model.max_tokens === undefined) {
+          parsed.transcribe_model.max_tokens = null;
+          dirty = true;
+        }
+        if (parsed.transcribe_model && parsed.transcribe_model.models === undefined) {
+          parsed.transcribe_model.models = ["whisper-1"];
+          dirty = true;
+        }
         if (parsed.browser_profile_path === undefined) {
           parsed.browser_profile_path = "~/.echo-ai/browser-profile";
           dirty = true;
@@ -206,7 +241,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 
-  sendMessage: async (prompt: string) => {
+  sendMessage: async (prompt: string, attachments?: Attachment[]) => {
     const { config } = get();
     if (!prompt.trim() || !config) return;
 
@@ -215,16 +250,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       role: "user",
       content: prompt,
       timestamp: new Date().toLocaleTimeString(),
+      attachments,
     };
 
     set((state) => ({
       messages: [...state.messages, userMsg],
       loading: true,
     }));
-    get().addLog(`User submitted prompt: "${prompt}"`);
+    get().addLog(`User submitted prompt: "${prompt}"${attachments?.length ? ` with ${attachments.length} attachments` : ""}`);
 
     try {
-      const result = await invoke<string>("send_prompt", { prompt });
+      const result = await invoke<string>("send_prompt", { prompt, attachments: attachments || null });
+      if (!get().loading) return; // Ignore response if user aborted prompt execution
+
       const assistantMsg: Message = {
         id: Math.random().toString(36).substring(7),
         role: "assistant",
@@ -255,6 +293,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  stopChat: () => {
+    set({ loading: false });
+    get().addLog("User interrupted execution.");
   },
 
   clearChat: async () => {

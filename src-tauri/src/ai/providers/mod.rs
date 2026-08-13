@@ -41,3 +41,10 @@ pub struct ProviderResponse {
     pub tool_calls: Option<Vec<ToolCall>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Attachment {
+    pub name: String,
+    pub mime_type: String,
+    pub data: String, 
+}
+

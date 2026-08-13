@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./button";
 import { cn } from "../../lib/cn";
@@ -30,6 +30,7 @@ export function Dropdown({
   triggerClassName = "",
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
+  const [openUpwards, setOpenUpwards] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -43,52 +44,88 @@ export function Dropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUpwards(spaceBelow < 240);
+    }
+  }, [open]);
+
   const selectedOption = options.find((option) => option.value === value);
 
   return (
-    <div ref={ref} className={cn("relative", className)}>
+    <div ref={ref} className={cn("relative w-full", className)}>
       <Button
-        type='button'
-        variant='secondary'
-        size='md'
+        type="button"
+        variant="secondary"
         onClick={() => setOpen((prev) => !prev)}
-        className={cn("w-full flex items-center justify-between text-left", triggerClassName)}
+        className={cn(
+          "w-full flex items-center justify-between text-left",
+          triggerClassName
+        )}
       >
-        <span className='flex flex-col items-start'>
-          <span className='font-bold text-text-main text-xs'>{selectedOption?.label ?? placeholder}</span>
-          {selectedOption?.description && <span className='text-[9.5px] font-semibold text-text-muted mt-0.5'>{selectedOption.description}</span>}
+        <span className="flex flex-col items-start justify-center pointer-events-none overflow-hidden flex-1">
+          <span className="font-bold text-text-main text-xs truncate w-full">
+            {selectedOption?.label ?? placeholder}
+          </span>
         </span>
-        <ChevronDown className={cn("h-4 w-4 text-text-muted transition-transform duration-75 ml-2", open && "rotate-180")} />
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 text-text-muted transition-transform duration-300 ease-in-out ml-3 shrink-0",
+            open && "rotate-180 text-accent-cyan"
+          )}
+        />
       </Button>
 
       {open && (
-        <div className='absolute left-0 right-0 top-[calc(100%+4px)] z-30 overflow-y-auto max-h-60 rounded-md border border-border-color bg-bg-secondary shadow-lg py-1 animate-fadeIn'>
+        <div 
+          className={cn(
+            "absolute left-0 right-0 z-50 overflow-y-auto max-h-72 py-1.5 px-1.5",
+            "rounded-xl border border-accent-cyan/20 bg-[#0a0a0d] shadow-[0_0_20px_rgba(0,240,255,0.08)]",
+            "backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 ease-out",
+            openUpwards ? "bottom-[calc(100%+6px)] origin-bottom" : "top-[calc(100%+6px)] origin-top"
+          )}
+        >
           {options.map((option) => {
             const isSelected = option.value === value;
 
             return (
               <button
                 key={option.value}
-                type='button'
+                type="button"
                 onClick={() => {
                   onChange(option.value);
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full text-left px-3.5 py-2 flex flex-col justify-start items-start border-none outline-none transition-all duration-75",
+                  "w-full text-left px-3 py-2 flex items-center justify-between border-none outline-none transition-all duration-150 relative cursor-pointer gap-2 rounded-lg my-0.5",
                   isSelected
-                    ? "bg-accent-cyan/15 text-accent-cyan font-bold border-l-2 border-accent-cyan pl-2.5"
-                    : "text-text-main hover:bg-bg-tertiary/80 active:bg-bg-tertiary"
+                    ? "bg-accent-cyan/10 text-accent-cyan"
+                    : "text-text-main hover:bg-white/[0.04] active:bg-white/[0.08]"
                 )}
               >
-                <span className='text-xs font-bold'>{option.label}</span>
-                {option.description && (
+                <div className="flex flex-col items-start overflow-hidden flex-1">
                   <span className={cn(
-                    "text-[9px] font-semibold mt-0.5",
-                    isSelected ? "text-accent-cyan/80" : "text-text-muted"
+                    "text-xs font-semibold truncate w-full", 
+                    isSelected ? "text-accent-cyan" : "text-text-main"
                   )}>
-                    {option.description}
+                    {option.label}
                   </span>
+                  {option.description && (
+                    <span
+                      className={cn(
+                        "text-[10px] mt-0.5 truncate w-full",
+                        isSelected ? "text-accent-cyan/70" : "text-text-muted"
+                      )}
+                    >
+                      {option.description}
+                    </span>
+                  )}
+                </div>
+                
+                {isSelected && (
+                  <Check className="h-3.5 w-3.5 text-accent-cyan shrink-0 ml-3 animate-scaleIn" />
                 )}
               </button>
             );

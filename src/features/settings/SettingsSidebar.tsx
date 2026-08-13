@@ -2,7 +2,7 @@ import React from "react";
 import { Sparkles, Mic, Mail, Zap, Clock, ChevronLeft } from "lucide-react";
 import { cn } from "../../lib/cn";
 
-export type SettingsTab = "textModel" | "transcribeModel" | "email" | "personalization" | "schedule";
+export type SettingsTab = "textModel" | "transcribeModel" | "email" | "personalization" | "schedule" | "library";
 
 interface SidebarItem {
   id: SettingsTab;
@@ -17,6 +17,7 @@ const sidebarItems: SidebarItem[] = [
   { id: "email", label: "Email Integration", icon: Mail, description: "IMAP credentials & folders" },
   { id: "personalization", label: "Core & Tweaks", icon: Zap, description: "Personalization & features" },
   { id: "schedule", label: "Schedule Setup", icon: Clock, description: "Autonomous cron routines" },
+  { id: "library", label: "Configuration Library", icon: Sparkles, description: "Saved AI presets list" },
 ];
 
 interface SettingsSidebarProps {
