@@ -1,7 +1,5 @@
-use crate::ai::providers::{AiProvider, Message, Role};
-use crate::ai::providers::gemini::GeminiProvider;
-use crate::ai::providers::openai::OpenAiProvider;
-use crate::ai::providers::glm::GlmProvider;
+use crate::ai::providers::{Message, Role};
+use crate::ai::providers::openai_compatible::OpenAiCompatibleProvider;
 use crate::ai::tools;
 use crate::utils::config::AppConfig;
 use crate::ai::memory::ChatMemory;
@@ -22,12 +20,11 @@ impl Orchestrator {
         state: &AppState,
         prompt: &str,
     ) -> Result<String, String> {
-        let (config, mut system_prompt, active_model) = {
+        let (config, mut system_prompt) = {
             let conf = state.config.lock().unwrap();
-            (conf.clone(), conf.system_prompt.clone(), conf.active_model.clone())
+            (conf.clone(), conf.system_prompt.clone())
         };
 
-        // Dynamically inject rules in case Local Storage overrides the default system prompt
         let interaction_rule = "\n\nYou have full ability to interact with web pages, such as clicking buttons or links, filling out input fields/forms, scrolling, and waiting. If the user asks you to click a button, type text, log in, or interact with any element on a page, you MUST call 'run_browser_agent' and specify the actions inside the 'steps' parameter array. Never claim you cannot interact with pages or buttons directly.";
         let line_number_rule = "\n\nWhen you read files using 'read_file', they will have line numbers prepended (e.g., '   1: code'). When writing/modifying code files using 'write_file', you MUST strip these prepended line numbers and save ONLY the raw code.";
         
@@ -53,7 +50,6 @@ impl Orchestrator {
             system_prompt.push_str(emoji_rule);
         }
 
-        // Initialize system prompt in memory if memory is empty
         {
             let mut mem = state.memory.lock().unwrap();
             if mem.get_messages().is_empty() {
@@ -61,7 +57,7 @@ impl Orchestrator {
             }
         }
 
-        let log_msg = format!("[Orchestrator] Starting pipeline with model: {}", active_model);
+        let log_msg = format!("[Orchestrator] Starting pipeline with model: {} ({})", config.text_model.model_name, config.text_model.provider_name);
         let _ = app.emit("sidecar-log", log_msg);
 
         let mut current_prompt = prompt.to_string();
@@ -78,7 +74,6 @@ impl Orchestrator {
                 return Err(err_msg);
             }
 
-            // Get current message history from state
             let history = {
                 let mem = state.memory.lock().unwrap();
                 mem.get_messages().to_vec()
@@ -89,29 +84,24 @@ impl Orchestrator {
             let log_msg = format!("[Orchestrator] Requesting completion from AI provider (Iteration {})...", loop_count);
             let _ = app.emit("sidecar-log", log_msg);
 
-            // Directly dispatch based on the model without dyn traits
-            let mut response = match active_model.as_str() {
-                "Gemini" => {
-                    let key = config.api_keys.gemini.clone();
-                    if key.is_empty() { return Err("Gemini API key is empty.".to_string()); }
-                    GeminiProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
-                }
-                "OpenAI" => {
-                    let key = config.api_keys.openai.clone();
-                    if key.is_empty() { return Err("OpenAI API key is empty.".to_string()); }
-                    OpenAiProvider.generate_response(&current_prompt, &history, &available_tools, &key).await?
-                }
-                "GLM" => {
-                    let key = config.api_keys.glm.clone();
-                    let model = config.api_keys.glm_model.clone();
-                    if key.is_empty() { return Err("GLM API key is empty.".to_string()); }
-                    let payload = format!("{}|{}", key, model);
-                    GlmProvider.generate_response(&current_prompt, &history, &available_tools, &payload).await?
-                }
-                _ => return Err(format!("Unsupported model '{active_model}' selected. Please choose a provider that has a valid API key configured.")),
-            };
+            let key = config.text_model.api_key.clone();
+            let endpoint = config.text_model.api_endpoint.clone();
+            let model = config.text_model.model_name.clone();
 
-            // Detect duplicate tool call loop
+            let is_local_ollama = endpoint.contains("localhost") || endpoint.contains("127.0.0.1");
+            if key.is_empty() && !is_local_ollama {
+                return Err(format!("API key is empty for text provider '{}'. Please configure it in Settings.", config.text_model.provider_name));
+            }
+
+            let mut response = OpenAiCompatibleProvider.generate_response(
+                &endpoint,
+                &key,
+                &model,
+                &current_prompt,
+                &history,
+                &available_tools
+            ).await?;
+
             if let Some(ref tcs) = response.tool_calls {
                 if let Some(first_tc) = tcs.first() {
                     let sig = (first_tc.name.clone(), first_tc.arguments.clone());
@@ -127,7 +117,7 @@ impl Orchestrator {
                             });
                             loop_count = MAX_LOOPS - 1;
                             current_prompt.clear();
-                            response.tool_calls = None; // Force assistant to not call tool again in history
+                            response.tool_calls = None;
                             continue;
                         }
                     }
@@ -135,10 +125,8 @@ impl Orchestrator {
                 }
             }
 
-            // Clear current prompt so it isn't appended in subsequent loops
             current_prompt.clear();
 
-            // Store user prompt in history on the first iteration
             if loop_count == 1 && !prompt.is_empty() {
                 let mut mem = state.memory.lock().unwrap();
                 mem.add_message(Message {
@@ -149,7 +137,6 @@ impl Orchestrator {
                 });
             }
 
-            // Store provider response in history
             {
                 let mut mem = state.memory.lock().unwrap();
                 mem.add_message(Message {
@@ -160,13 +147,11 @@ impl Orchestrator {
                 });
             }
 
-            // Log response contents
             if let Some(ref text) = response.content {
                 let log_msg = format!("[AI Response] {}", text);
                 let _ = app.emit("sidecar-log", log_msg);
             }
 
-            // If model made tool calls, execute them and feed results back
             if let Some(tool_calls) = response.tool_calls {
                 let log_msg = format!("[Orchestrator] Model requested {} tool call(s). Running them...", tool_calls.len());
                 let _ = app.emit("sidecar-log", log_msg);
@@ -191,17 +176,15 @@ impl Orchestrator {
                         mem.add_message(Message {
                             role: Role::Tool,
                             content: tool_result,
-                            name: Some(tc.id.clone()), // OpenAI maps this to tool_call_id
+                            name: Some(tc.id.clone()), 
                             tool_calls: None,
                         });
                     }
                 }
 
-                // Continue loop to feed tool outputs back to AI provider
                 continue;
             }
 
-            // If there are no tool calls, this is our final response
             return Ok(response.content.unwrap_or_else(|| "No text response generated.".to_string()));
         }
     }

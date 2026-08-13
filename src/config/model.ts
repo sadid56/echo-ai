@@ -1,58 +1,72 @@
 import { DropdownOption } from "../components/ui/dropdown";
 
-export const modelOptions: DropdownOption[] = [
+export interface ModelPreset {
+  label: string;
+  providerName: string;
+  apiEndpoint: string;
+  modelName: string;
+}
+
+export const textModelPresets: ModelPreset[] = [
+  {
+    label: "OpenAI (GPT-4o)",
+    providerName: "OpenAI",
+    apiEndpoint: "https://api.openai.com/v1/chat/completions",
+    modelName: "gpt-4o",
+  },
   {
     label: "Gemini 1.5 Flash (Google)",
-    value: "Gemini",
-    models: [
-      {
-        label: "Gemini 1.5 Flash",
-        value: "gemini-1.5-flash",
-        title: "General-purpose fast model for quick coding and everyday prompts.",
-        isFree: true,
-      },
-      {
-        label: "Gemini 1.5 Pro",
-        value: "gemini-1.5-pro",
-        title: "Higher quality reasoning and better instruction following for richer responses.",
-        isFree: false,
-      },
-    ],
+    providerName: "Gemini",
+    apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    modelName: "gemini-1.5-flash",
   },
   {
-    label: "Open AI",
-    value: "OpenAI",
-    models: [
-      {
-        label: "GPT-4",
-        value: "gpt-4",
-        title: "Advanced reasoning and instruction following for complex tasks.",
-        isFree: false,
-      },
-    ],
+    label: "GLM-4.5-Flash (Zhipu AI)",
+    providerName: "GLM",
+    apiEndpoint: "https://api.z.ai/api/paas/v4/chat/completions",
+    modelName: "glm-4.5-flash",
   },
   {
-    label: "GLM (Zhipu AI)",
-    value: "GLM",
-    models: [
-      {
-        label: "GLM-4.5-Flash",
-        value: "glm-4.5-flash",
-        title: "General-purpose fast model for quick coding and everyday prompts.",
-        isFree: true,
-      },
-      {
-        label: "GLM-4.7-Flash",
-        value: "glm-4.7-flash",
-        title: "Higher quality reasoning and better instruction following for richer responses.",
-        isFree: false,
-      },
-      {
-        label: "GLM-4.6V-Flash",
-        value: "glm-4.6v-flash",
-        title: "Vision-capable multimodal model for image-aware and visual tasks.",
-        isFree: false,
-      },
-    ],
+    label: "MiniMax M3 (Cloud)",
+    providerName: "MiniMax",
+    apiEndpoint: "https://api.minimax.io/v1/chat/completions",
+    modelName: "MiniMax-M3",
   },
+  {
+    label: "MiniMax M3 (Local Ollama)",
+    providerName: "Ollama",
+    apiEndpoint: "http://localhost:11434/v1/chat/completions",
+    modelName: "minimax-m3:cloud",
+  },
+];
+
+export const transcribeModelPresets: ModelPreset[] = [
+  {
+    label: "OpenAI Whisper (Cloud)",
+    providerName: "OpenAI",
+    apiEndpoint: "https://api.openai.com/v1/audio/transcriptions",
+    modelName: "whisper-1",
+  },
+  {
+    label: "Gemini 1.5 Flash (Google Transcription)",
+    providerName: "Gemini",
+    apiEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+    modelName: "gemini-1.5-flash",
+  },
+];
+
+export const textPresetOptions: DropdownOption[] = [
+  { label: "Select a Preset Configuration...", value: "" },
+  ...textModelPresets.map((preset) => ({
+    label: preset.label,
+    value: preset.label,
+  })),
+];
+
+export const transcribePresetOptions: DropdownOption[] = [
+  { label: "Select a Preset Configuration...", value: "" },
+  ...transcribeModelPresets.map((preset) => ({
+    label: preset.label,
+    value: preset.label,
+  })),
 ];

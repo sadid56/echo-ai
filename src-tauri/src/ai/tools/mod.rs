@@ -169,13 +169,13 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "run_git_action".to_string(),
-            description: "Perform common Git operations (status, diff, commit_and_push, rebase, rebase_continue, rebase_abort)".to_string(),
+            description: "Execute a Git command/action in the workspace".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "action": {
                         "type": "string",
-                        "description": "Git action: 'status', 'diff', 'commit_and_push', 'rebase', 'rebase_continue', or 'rebase_abort'"
+                        "description": "Git action: 'status' | 'commit_and_push' | 'fetch' | 'rebase' | 'pull'"
                     },
                     "commit_message": {
                         "type": "string",
@@ -187,14 +187,6 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
                     }
                 },
                 "required": ["action"]
-            }),
-        },
-        ToolDefinition {
-            name: "get_active_notifications".to_string(),
-            description: "Read active desktop notifications on the user's OS".to_string(),
-            parameters: json!({
-                "type": "object",
-                "properties": {}
             }),
         },
     ]
@@ -242,7 +234,13 @@ pub async fn execute_tool(
                 "".to_string()
             };
             
-            process_manager::run_python_agent(app, url, query, &steps_str).await
+            let state = app.state::<AppState>();
+            let profile_path = {
+                let conf = state.config.lock().unwrap();
+                conf.browser_profile_path.clone()
+            };
+            
+            process_manager::run_browser_agent(app, url, query, &steps_str, &profile_path).await
         }
         "fetch_emails" => {
             let filter_type = args_val["filter_type"].as_str().unwrap_or("UNSEEN");
@@ -274,9 +272,6 @@ pub async fn execute_tool(
             let commit_message = args_val["commit_message"].as_str();
             let target = args_val["target"].as_str();
             git::run_git_action(action, commit_message, target).await
-        }
-        "get_active_notifications" => {
-            notification::get_active_notifications().await
         }
         _ => Err(format!("Unknown tool: {}", name)),
     }

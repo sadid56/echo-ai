@@ -1,6 +1,7 @@
 import sys
 import json
 import argparse
+import os
 from agent.runner import BrowserRunner
 
 def main():
@@ -9,9 +10,15 @@ def main():
     parser.add_argument("--url", default="", help="Initial URL to scrape")
     parser.add_argument("--query", default="", help="Query parameter to find")
     parser.add_argument("--steps", default="", help="JSON string representing step-by-step actions")
+    parser.add_argument("--profile", default="", help="Custom persistent browser profile path")
     args = parser.parse_args()
 
     runner = BrowserRunner()
+    
+    if args.profile:
+        resolved_path = os.path.expanduser(args.profile)
+        runner.config.persistent_profile_path = resolved_path
+        os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
 
     if not args.steps and not args.url and args.query:
         q_stripped = args.query.strip()
@@ -34,7 +41,6 @@ def main():
         else:
             result = runner.run(args.url, args.query)
     
-    # Output the final JSON string to stdout if not printed already
     if isinstance(result, dict) and "already_printed" in result:
         pass
     else:

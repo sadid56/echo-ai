@@ -8,6 +8,9 @@ use crate::ai::memory::ChatMemory;
 use crate::utils::config::AppConfig;
 use std::sync::Mutex;
 use tauri::{AppHandle, State, Manager};
+use tauri::image::Image;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 #[tauri::command]
 async fn send_prompt(
@@ -31,6 +34,10 @@ fn update_config(state: State<'_, AppState>, config: AppConfig) -> Result<(), St
     
     let mut mem = state.memory.lock().unwrap();
     mem.set_system_prompt(conf.system_prompt.clone());
+    
+    // Set auto startup on macOS based on config setting
+    let _ = crate::system::autostart::set_autostart(conf.enable_autostart);
+    
     Ok(())
 }
 
@@ -67,7 +74,6 @@ fn start_recording() -> Result<(), String> {
     let temp_dir = std::env::temp_dir();
     let file_path = temp_dir.join("echo_ai_recording.wav");
 
-    // Try arecord, pw-record, parecord
     let mut child = Command::new("arecord")
         .args(&["-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "0"])
         .arg(&file_path)
@@ -107,9 +113,8 @@ async fn stop_recording(state: State<'_, AppState>) -> Result<String, String> {
         let child_opt = proc_guard.take();
         let mut child = child_opt.ok_or_else(|| "Not recording".to_string())?;
 
-        // Terminate the recording process
         let _ = child.kill();
-        let _ = child.wait(); // prevent zombie process
+        let _ = child.wait(); 
 
         let path_guard = RECORDING_PATH.lock().unwrap();
         let file_path_opt = path_guard.as_ref();
@@ -126,7 +131,6 @@ async fn stop_recording(state: State<'_, AppState>) -> Result<String, String> {
     let audio_bytes = fs::read(&file_path)
         .map_err(|e| format!("Failed to read recording file: {}", e))?;
 
-    // Clean up file
     let _ = fs::remove_file(&file_path);
 
     if audio_bytes.len() < 100 {
@@ -157,7 +161,49 @@ pub fn run() {
             
             let handle = app.handle().clone();
             crate::system::watcher::start_file_watcher(handle.clone());
-            crate::system::scheduler::start_scheduler(handle);
+            crate::system::scheduler::start_scheduler(handle.clone());
+            crate::system::clipboard_helper::start_clipboard_helper(handle);
+            
+            // System Tray Menu Setup
+            let quit_i = MenuItem::with_id(app, "quit", "Quit Echo AI", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Show Main Window", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            let icon_bytes = include_bytes!("../icons/32x32.png");
+            let icon = Image::from_bytes(icon_bytes)?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(icon)
+                .menu(&menu)
+                .on_menu_event(|app, event| {
+                    match event.id.as_ref() {
+                        "quit" => {
+                            std::process::exit(0);
+                        }
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
             
             Ok(())
         })

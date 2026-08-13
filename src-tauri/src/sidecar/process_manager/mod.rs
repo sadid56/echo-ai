@@ -38,19 +38,18 @@ fn get_python_executable() -> String {
     "python3".to_string()
 }
 
-pub async fn run_python_agent(
+pub async fn run_browser_agent(
     app: AppHandle,
     url: &str,
     query: &str,
     steps: &str,
+    profile_path: &str,
 ) -> Result<String, String> {
-    // Find the python sidecar script path
     let mut script_path = PathBuf::from(".");
     script_path.push("sidecars");
     script_path.push("browser_agent");
     script_path.push("main.py");
     
-    // Fallback search if current dir is src-tauri
     if !script_path.exists() {
         script_path = PathBuf::from("..");
         script_path.push("sidecars");
@@ -73,6 +72,9 @@ pub async fn run_python_agent(
     if !query.is_empty() {
         cmd.arg("--query").arg(query);
     }
+    if !profile_path.is_empty() {
+        cmd.arg("--profile").arg(profile_path);
+    }
 
     let mut child = cmd
         .stdout(Stdio::piped())
@@ -88,7 +90,6 @@ pub async fn run_python_agent(
     
     let app_clone = app.clone();
     
-    // Spawn task to read stderr logs
     tokio::spawn(async move {
         while let Ok(Some(line)) = err_reader.next_line().await {
             let log_msg = format!("[Python Err] {}", line);

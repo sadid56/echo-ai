@@ -1,189 +1,203 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Bot, UserRound } from "lucide-react";
+import { Bot, Sparkles } from "lucide-react";
 import { CommandInput } from "../features/home/CommandInput";
 import { VoiceOverlay } from "../features/home/VoiceOverlay";
 import { useChatStore } from "../store/chatStore";
 import Logs from "../features/home/logs";
 import Header from "../layouts/header";
+import { Drawer } from "../components/ui/drawer";
+import { getFriendlyMessage, getToolMessage } from "../lib/loaderMessages";
+import { CustomMarkdown } from "../components/common/custom-markdown";
 
 export function HomeScreen() {
   const [showVoice, setShowVoice] = useState(false);
-  const [showLogs, setShowLogs] = useState(true);
+  const [showLogs, setShowLogs] = useState(false);
   const { config, messages, logs, loading } = useChatStore();
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const scrollElement = scrollRef.current;
+      scrollElement.scrollTo({ top: scrollElement.scrollHeight, behavior: "smooth" });
     }
   }, [messages, logs, loading]);
-
-
 
   const recentLogs = logs.slice(-10).reverse();
 
   return (
-    <div className='flex flex-col h-screen bg-bg-primary text-text-main relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(0,240,255,0.03),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(199,125,255,0.03),transparent_40%)]'>
-      <Header showLogs={showLogs} setShowLogs={setShowLogs} />
+    <div className='flex flex-col h-screen bg-[#08080a] text-text-main relative overflow-hidden'>
+      {/* Dynamic Ambient Background Grid & Glows */}
+      <div className='absolute inset-0 z-0 pointer-events-none'>
+        <div className='absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-accent-cyan/5 blur-[150px] mix-blend-screen' />
+        <div className='absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-accent-purple/5 blur-[120px] mix-blend-screen' />
+        <div className='absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20' />
+      </div>
 
-      <div className='flex flex-1 overflow-hidden relative'>
-        <main className='flex flex-col flex-1 overflow-hidden'>
-          <div ref={scrollRef} className='flex-1 overflow-y-auto px-5 py-5 md:px-8'>
+      <div className='relative z-20'>
+        <Header showLogs={showLogs} setShowLogs={setShowLogs} />
+      </div>
+
+      <div className='flex flex-1 overflow-hidden relative z-10'>
+        <main className='flex flex-col flex-1 overflow-hidden relative'>
+          <div ref={scrollRef} className='flex-1 overflow-y-auto px-4 py-8 md:px-12 pb-[240px] scroll-smooth'>
             {messages.length === 0 ? (
-              <div className='flex h-full items-center justify-center'>
-                <div className='max-w-xl rounded-3xl border border-border-color bg-bg-secondary/40 p-8 text-center shadow-[0_0_30px_rgba(0,240,255,0.08)]'>
-                  <div className='mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-cyan/20 to-accent-purple/20 text-accent-cyan shadow-[0_0_18px_rgba(0,240,255,0.2)]'>
-                    <Bot className='h-7 w-7' />
+              /* PREVIOUS SWEET SPOT AI CORE */
+              <div className='flex h-full flex-col items-center justify-center space-y-12 animate-in fade-in zoom-in-95 duration-1000'>
+                <div className='relative flex h-40 w-40 items-center justify-center group'>
+                  <div className='absolute inset-0 rounded-full bg-accent-cyan/15 blur-[40px] animate-pulse'></div>
+                  <div className='absolute inset-0 rounded-full border border-white/5 border-t-accent-cyan/80 animate-[spin_10s_linear_infinite]'></div>
+                  <div className='absolute inset-4 rounded-full border border-white/5 border-b-accent-purple/60 animate-[spin_15s_linear_infinite_reverse]'></div>
+                  <div className='absolute inset-8 rounded-full border border-dashed border-white/20 animate-[spin_20s_linear_infinite]'></div>
+                  <div className='relative h-16 w-16 rounded-full bg-gradient-to-br from-accent-cyan/50 to-accent-purple/50 p-[1px] shadow-[0_0_30px_rgba(0,240,255,0.3)] transition-transform duration-500 group-hover:scale-110'>
+                    <div className='h-full w-full rounded-full bg-[#0a0a0c] flex items-center justify-center overflow-hidden relative'>
+                      <div className='absolute inset-0 bg-accent-cyan/10 animate-pulse'></div>
+                      <Bot className='h-7 w-7 text-accent-cyan z-10' />
+                    </div>
                   </div>
-                  <h2 className='text-xl font-semibold text-text-main'>What should Echo do next?</h2>
-                  <p className='mt-2 text-sm leading-relaxed text-text-muted'>
-                    Ask it to open a browser, navigate to a site, search the web, inspect files, or run local commands.
+                </div>
+
+                <div className='text-center space-y-4 z-10'>
+                  <h1 className='text-4xl md:text-5xl font-light tracking-tight text-white/90 drop-shadow-md'>Good afternoon.</h1>
+                  <p className='text-md text-white/50 font-light max-w-sm mx-auto tracking-wide'>
+                    I'm Echo. Let's build something, search the web, or just talk.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className='mx-auto flex max-w-4xl flex-col gap-4'>
+              /* CONVERSATION FEED */
+              <div className='mx-auto flex max-w-4xl flex-col gap-8 pb-10'>
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex animate-float-in ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-2xl w-full rounded-2xl border border-border-color bg-bg-secondary/60 px-5 py-4 text-text-main shadow-[0_12px_30px_rgba(10,10,12,0.25)] transition-all duration-300 hover:border-accent-cyan/20`}
-                    >
-                      <div className='mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-text-muted border-b border-border-color pb-2'>
-                        {message.role === "user" ? (
-                          <>
-                            <UserRound className='h-3.5 w-3.5 text-accent-purple' />
-                            <span className="font-semibold text-accent-purple">You</span>
-                          </>
-                        ) : (
-                          <>
-                            <Bot className='h-3.5 w-3.5 text-accent-cyan' />
-                            <span className="font-semibold text-accent-cyan">{config?.active_model ?? "Echo"}</span>
-                          </>
-                        )}
-                        <span className="ml-auto text-[9px] text-text-muted/60 lowercase">{message.timestamp}</span>
-                      </div>
+                  <div
+                    key={message.id}
+                    className={`flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    {message.role === "user" ? (
+                      <div className='group relative max-w-[85%] md:max-w-[75%]'>
+                        <div className='absolute inset-0 bg-gradient-to-br from-accent-purple/10 to-accent-cyan/5 rounded-2xl rounded-tr-sm blur-md opacity-50'></div>
 
-                      <div className='markdown-body text-sm leading-7 text-text-main/95'>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                        <div className='text-[15px] leading-relaxed font-light'>
+                          <CustomMarkdown content={message.content} />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className='flex gap-5 max-w-[95%] md:max-w-[90%] w-full'>
+                        <div className='flex-shrink-0 mt-1 relative h-9 w-9 flex items-center justify-center rounded-full bg-[#121214] border border-white/10 shadow-[0_0_15px_rgba(0,240,255,0.1)]'>
+                          <div className='absolute inset-[-2px] rounded-full border-t-[1.5px] border-accent-cyan/60 animate-[spin_4s_linear_infinite]'></div>
+                          <Bot className='h-4 w-4 text-accent-cyan' />
+                        </div>
+                        <div className='flex-1 pt-1 space-y-1.5'>
+                          <div className='flex items-center gap-3'>
+                            <span className='text-[13px] font-semibold text-accent-cyan/90 tracking-wide'>
+                              {message.model ?? config?.text_model?.model_name ?? "Echo"}
+                            </span>
+                            <span className='text-[10px] text-white/30 tracking-wider font-mono'>{message.timestamp}</span>
+                          </div>
+
+                          <CustomMarkdown content={message.content} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
 
-                {loading && (() => {
-                  const getLoaderStatus = (logsList: string[]) => {
-                    if (logsList.length === 0) return "Thinking...";
-                    const recent = logsList.slice(-6).reverse();
-                    for (const rawLog of recent) {
-                      const log = rawLog.toLowerCase();
-                      if (log.includes("run_browser_agent")) {
-                        if (log.includes("click") || log.includes("button") || log.includes("link")) {
-                          return "Clicking page element...";
+                {/* ADVANCED AI PROCESSING / THINKING STATE */}
+                {loading &&
+                  (() => {
+                    const getLoaderStatus = (logsList: string[]) => {
+                      if (logsList.length === 0) return getFriendlyMessage("thinking", "initial");
+                      for (let i = logsList.length - 1; i >= 0; i--) {
+                        const rawLog = logsList[i];
+                        const log = rawLog.toLowerCase();
+                        if (log.includes("browser") || log.includes("run_browser_agent")) {
+                          if (log.includes("click") || log.includes("clicking")) return getFriendlyMessage("clicking", rawLog);
+                          if (log.includes("type") || log.includes("typing") || log.includes("input") || log.includes("search"))
+                            return getFriendlyMessage("typing", rawLog);
+                          if (log.includes("scroll") || log.includes("scrolling")) return getFriendlyMessage("scrolling", rawLog);
+                          if (log.includes("navigate") || log.includes("navigating") || log.includes("open") || log.includes("url"))
+                            return getFriendlyMessage("navigating", rawLog);
+                          if (log.includes("screenshot") || log.includes("capture")) return getFriendlyMessage("screenshot", rawLog);
                         }
-                        if (log.includes("type") || log.includes("input") || log.includes("search") || log.includes("query") || log.includes("job")) {
-                          return "Searching the web for jobs...";
+                        if (rawLog.includes("Executing tool")) {
+                          const toolMatch = rawLog.match(/Executing tool '([^']+)' with arguments: (.*)/);
+                          if (toolMatch) {
+                            try {
+                              return getToolMessage(toolMatch[1], JSON.parse(toolMatch[2]));
+                            } catch (e) {}
+                            return getToolMessage(toolMatch[1], {});
+                          }
                         }
-                        return "Navigating browser & interacting with page...";
+                        if (log.includes("fetch_emails")) return getFriendlyMessage("fetch_emails", rawLog);
+                        if (log.includes("list_directory")) return getFriendlyMessage("list_directory", rawLog);
+                        if (log.includes("run_git_action")) return getFriendlyMessage("run_git_action", rawLog);
+                        if (log.includes("tool success")) return getFriendlyMessage("tool_success", rawLog);
+                        if (log.includes("tool error")) return getFriendlyMessage("tool_error", rawLog);
+                        if (log.includes("requesting completion") || log.includes("starting pipeline"))
+                          return getFriendlyMessage("planning", rawLog);
                       }
-                      if (log.includes("execute_command")) {
-                        return "Executing terminal command...";
-                      }
-                      if (log.includes("fetch_emails")) {
-                        return "Connecting to server & retrieving emails...";
-                      }
-                      if (log.includes("read_file")) {
-                        return "Reading file contents...";
-                      }
-                      if (log.includes("write_file")) {
-                        return "Writing code modifications to file...";
-                      }
-                      if (log.includes("list_directory")) {
-                        return "Scanning directory structure...";
-                      }
-                      if (log.includes("run_git_action")) {
-                        return "Performing Git version control action...";
-                      }
-                      if (log.includes("tool success")) {
-                        return "Processing results...";
-                      }
-                      if (log.includes("tool error")) {
-                        return "Recovering from error...";
-                      }
-                      if (log.includes("requesting completion") || log.includes("starting pipeline")) {
-                        return "Analyzing prompt & planning next steps...";
-                      }
-                    }
-                    return "Processing request...";
-                  };
+                      return getFriendlyMessage("generic_processing", "fallback");
+                    };
+                    const currentStatus = getLoaderStatus(logs);
 
-                  const currentStatus = getLoaderStatus(logs);
-                  const lastRawLog = logs.length > 0 ? logs[logs.length - 1].replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, "") : "";
+                    return (
+                      <div className='flex gap-5 max-w-[90%] w-full animate-in fade-in slide-in-from-bottom-2 duration-500'>
+                        <div className='flex-shrink-0 mt-1 relative h-10 w-10 flex items-center justify-center rounded-full'>
+                          <div className='absolute inset-0 rounded-full bg-accent-cyan/20 blur-md animate-pulse'></div>
+                          <div className='absolute inset-0 rounded-full border-2 border-transparent border-t-accent-cyan/90 border-b-accent-cyan/90 animate-[spin_1.5s_linear_infinite]'></div>
+                          <div className='absolute inset-[-4px] rounded-full border border-transparent border-l-accent-purple/70 border-r-accent-purple/70 animate-[spin_2.5s_linear_infinite_reverse]'></div>
+                          <Sparkles className='h-4 w-4 text-accent-cyan animate-pulse z-10' />
+                        </div>
 
-                  return (
-                    <div className='flex justify-start animate-float-in w-full max-w-2xl'>
-                      <div className='w-full rounded-2xl border border-accent-cyan/30 bg-bg-secondary/80 p-5 shadow-[0_0_30px_rgba(0,240,255,0.15)] relative overflow-hidden'>
-                        {/* Shimmer/Pulse ambient background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/5 via-accent-purple/5 to-accent-blue/5 animate-pulse" />
-                        
-                        <div className='relative z-10'>
-                          <div className='mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-text-muted border-b border-border-color pb-2'>
-                            <Bot className='h-3.5 w-3.5 text-accent-cyan animate-pulse' />
-                            <span className="font-semibold text-accent-cyan animate-pulse">Echo is active</span>
+                        <div className='flex-1 pt-1'>
+                          {/* Shimmering Text Effect */}
+                          <div className='flex items-center gap-2 mb-2'>
+                            <p className='text-[14px] font-medium tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-accent-cyan via-white to-accent-purple animate-[pulse_2s_ease-in-out_infinite]'>
+                              {currentStatus}
+                            </p>
+                            <span className='flex gap-0.5'>
+                              <span className='w-1 h-1 bg-accent-cyan/60 rounded-full animate-bounce [animation-delay:-0.3s]'></span>
+                              <span className='w-1 h-1 bg-accent-cyan/60 rounded-full animate-bounce [animation-delay:-0.15s]'></span>
+                              <span className='w-1 h-1 bg-accent-cyan/60 rounded-full animate-bounce'></span>
+                            </span>
                           </div>
 
-                          <div className="flex items-start gap-4 py-2">
-                            {/* Minimal Static Human Brain Icon without animation */}
-                            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center bg-bg-primary/40 rounded-full border border-border-color/60 shadow-inner">
-                              <svg className="absolute h-full w-full p-2.5" viewBox="0 0 100 100" fill="none">
-                                {/* Left Brain Hemisphere Contour */}
-                                <path d="M48,25 C32,23 20,35 24,52 C18,62 25,75 38,75 C43,75 46,70 48,66" stroke="#00f0ff" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
-                                <path d="M46,38 C35,38 30,48 35,56 C30,62 38,68 45,62" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
-                                
-                                {/* Right Brain Hemisphere Contour */}
-                                <path d="M52,25 C68,23 80,35 76,52 C82,62 75,75 62,75 C57,75 54,70 52,66" stroke="#c77dff" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
-                                <path d="M54,38 C65,38 70,48 65,56 C70,62 62,68 55,62" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
-
-                                {/* Central Axis */}
-                                <path d="M50,28 L50,68" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="3 3" />
-                              </svg>
-                            </div>
-
-                            <div className="flex flex-col gap-2 min-w-0 flex-1">
-                              <p className="text-sm font-medium text-text-main tracking-wide">
-                                {currentStatus}
-                              </p>
-                              {lastRawLog && (
-                                <p className="text-[11px] text-text-muted truncate font-mono bg-bg-primary/50 px-2 py-1 rounded border border-border-color/50 max-w-md">
-                                  {lastRawLog}
-                                </p>
-                              )}
-                              
-                              {/* Skeleton Content Loading blocks */}
-                              <div className="flex flex-col gap-2 w-full mt-1.5">
-                                <div className="h-2 w-11/12 rounded bg-text-muted/10 animate-pulse" />
-                                <div className="h-2 w-5/6 rounded bg-text-muted/10 animate-pulse [animation-delay:150ms]" />
-                                <div className="h-2 w-2/3 rounded bg-text-muted/10 animate-pulse [animation-delay:300ms]" />
-                              </div>
-                            </div>
+                          {/* Flowing Data Skeleton Lines */}
+                          <div className='flex flex-col gap-2.5 w-full max-w-sm mt-1 opacity-70'>
+                            <div className='h-1.5 w-full bg-gradient-to-r from-accent-cyan/10 via-accent-cyan/30 to-accent-cyan/10 rounded-full animate-[pulse_1.5s_ease-in-out_infinite] bg-[length:200%_100%]'></div>
+                            <div className='h-1.5 w-[85%] bg-gradient-to-r from-accent-purple/10 via-accent-purple/30 to-accent-purple/10 rounded-full animate-[pulse_1.5s_ease-in-out_infinite] delay-150 bg-[length:200%_100%]'></div>
+                            <div className='h-1.5 w-[60%] bg-gradient-to-r from-accent-cyan/10 via-accent-cyan/20 to-transparent rounded-full animate-[pulse_1.5s_ease-in-out_infinite] delay-300'></div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
               </div>
             )}
           </div>
 
-          <footer className='p-4 border-t border-border-color bg-bg-secondary/40 backdrop-blur-md flex flex-col gap-3'>
-            <CommandInput onVoiceClick={() => setShowVoice(true)} />
-          </footer>
-        </main>
+          {/* DOCK INPUT AREA */}
+          <div className='absolute bottom-0 left-0 w-full pt-20 pb-8 px-4 bg-gradient-to-t from-[#08080a] via-[#08080a]/95 to-transparent pointer-events-none z-20'>
+            <div className='max-w-4xl mx-auto w-full pointer-events-auto flex flex-col gap-3'>
+              <div className='shadow-[0_0_40px_rgba(0,0,0,0.5)] rounded-[22px]'>
+                <CommandInput onVoiceClick={() => setShowVoice(true)} />
+              </div>
 
-        {showLogs && <Logs recentLogs={recentLogs} setShowLogs={setShowLogs} />}
+              <div className='flex justify-center items-center px-2'>
+                <p className='text-[11px] font-light text-white/30 tracking-wide'>
+                  Echo can make mistakes. Consider verifying important information.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
+
+      <Drawer open={showLogs} onOpenChange={setShowLogs}>
+        <div className='flex-1 flex flex-col min-h-0 bg-[#08080a]/95 backdrop-blur-xl p-4 border-l border-white/5 shadow-2xl'>
+          <Logs recentLogs={recentLogs} setShowLogs={setShowLogs} />
+        </div>
+      </Drawer>
 
       {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} />}
     </div>

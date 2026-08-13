@@ -47,32 +47,50 @@ export function Dropdown({
 
   return (
     <div ref={ref} className={cn("relative", className)}>
-      <Button type='button' variant='secondary' size='md' onClick={() => setOpen((prev) => !prev)} className={triggerClassName}>
+      <Button
+        type='button'
+        variant='secondary'
+        size='md'
+        onClick={() => setOpen((prev) => !prev)}
+        className={cn("w-full flex items-center justify-between text-left", triggerClassName)}
+      >
         <span className='flex flex-col items-start'>
-          <span className='font-medium text-text-main'>{selectedOption?.label ?? placeholder}</span>
-          {selectedOption?.description && <span className='text-[10px] text-text-muted'>{selectedOption.description}</span>}
+          <span className='font-bold text-text-main text-xs'>{selectedOption?.label ?? placeholder}</span>
+          {selectedOption?.description && <span className='text-[9.5px] font-semibold text-text-muted mt-0.5'>{selectedOption.description}</span>}
         </span>
-        <ChevronDown className={cn("h-4 w-4 text-text-muted transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 text-text-muted transition-transform duration-75 ml-2", open && "rotate-180")} />
       </Button>
 
       {open && (
-        <div className='absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-border-color bg-bg-secondary shadow-2xl'>
+        <div className='absolute left-0 right-0 top-[calc(100%+4px)] z-30 overflow-y-auto max-h-60 rounded-md border border-border-color bg-bg-secondary shadow-lg py-1 animate-fadeIn'>
           {options.map((option) => {
             const isSelected = option.value === value;
 
             return (
-              <Button
+              <button
                 key={option.value}
                 type='button'
                 onClick={() => {
                   onChange(option.value);
                   setOpen(false);
                 }}
-                variant={isSelected ? "primary" : "secondary"}
+                className={cn(
+                  "w-full text-left px-3.5 py-2 flex flex-col justify-start items-start border-none outline-none transition-all duration-75",
+                  isSelected
+                    ? "bg-accent-cyan/15 text-accent-cyan font-bold border-l-2 border-accent-cyan pl-2.5"
+                    : "text-text-main hover:bg-bg-tertiary/80 active:bg-bg-tertiary"
+                )}
               >
-                <span className='text-sm font-semibold text-text-main'>{option.label}</span>
-                {option.description && <span className='text-[10px] text-text-muted'>{option.description}</span>}
-              </Button>
+                <span className='text-xs font-bold'>{option.label}</span>
+                {option.description && (
+                  <span className={cn(
+                    "text-[9px] font-semibold mt-0.5",
+                    isSelected ? "text-accent-cyan/80" : "text-text-muted"
+                  )}>
+                    {option.description}
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>

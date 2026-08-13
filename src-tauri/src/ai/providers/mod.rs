@@ -1,6 +1,4 @@
-pub mod gemini;
-pub mod openai;
-pub mod glm;
+pub mod openai_compatible;
 
 use serde::{Serialize, Deserialize};
 
@@ -43,13 +41,3 @@ pub struct ProviderResponse {
     pub tool_calls: Option<Vec<ToolCall>>,
 }
 
-#[allow(async_fn_in_trait)]
-pub trait AiProvider: Send + Sync {
-    async fn generate_response(
-        &self,
-        prompt: &str,
-        history: &[Message],
-        tools: &[ToolDefinition],
-        api_key: &str,
-    ) -> Result<ProviderResponse, String>;
-}

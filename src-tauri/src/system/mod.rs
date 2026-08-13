@@ -5,3 +5,5 @@ pub mod notification;
 pub mod git;
 pub mod watcher;
 pub mod scheduler;
+pub mod clipboard_helper;
+pub mod autostart;

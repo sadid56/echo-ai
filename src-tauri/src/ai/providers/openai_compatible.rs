@@ -1,20 +1,20 @@
-use crate::ai::providers::{AiProvider, Message, ToolDefinition, ProviderResponse, ToolCall, Role};
+use crate::ai::providers::{Message, ToolDefinition, ProviderResponse, ToolCall, Role};
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::time::Duration;
 
-pub struct OpenAiProvider;
+pub struct OpenAiCompatibleProvider;
 
-impl AiProvider for OpenAiProvider {
-    async fn generate_response(
+impl OpenAiCompatibleProvider {
+    pub async fn generate_response(
         &self,
+        endpoint: &str,
+        api_key: &str,
+        model_name: &str,
         prompt: &str,
         history: &[Message],
         tools: &[ToolDefinition],
-        api_key: &str,
     ) -> Result<ProviderResponse, String> {
-        let url = "https://api.openai.com/v1/chat/completions";
-
         let mut messages = Vec::new();
 
         // Add history
@@ -64,7 +64,7 @@ impl AiProvider for OpenAiProvider {
         }
 
         let mut body = json!({
-            "model": "gpt-4o",
+            "model": model_name,
             "messages": messages
         });
 
@@ -85,13 +85,16 @@ impl AiProvider for OpenAiProvider {
         }
 
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(60))
             .build()
             .map_err(|e| e.to_string())?;
 
-        let res = client.post(url)
-            .header("Authorization", format!("Bearer {}", api_key))
-            .json(&body)
+        let mut req = client.post(endpoint);
+        if !api_key.is_empty() {
+            req = req.header("Authorization", format!("Bearer {}", api_key));
+        }
+
+        let res = req.json(&body)
             .send()
             .await
             .map_err(|e| e.to_string())?;
@@ -99,7 +102,13 @@ impl AiProvider for OpenAiProvider {
         let status = res.status();
         if !status.is_success() {
             let err_text = res.text().await.unwrap_or_default();
-            return Err(format!("OpenAI API error ({}): {}", status, err_text));
+            // Parse error message if it's formatted as standard OpenAI JSON error
+            if let Ok(err_json) = serde_json::from_str::<Value>(&err_text) {
+                if let Some(msg) = err_json["error"]["message"].as_str() {
+                    return Err(format!("API Error ({}): {}", status, msg));
+                }
+            }
+            return Err(format!("API Error ({}): {}", status, err_text));
         }
 
         let res_json: Value = res.json().await.map_err(|e| e.to_string())?;

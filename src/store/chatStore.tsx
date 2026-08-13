@@ -1,12 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
-export interface ApiKeys {
-  gemini: string;
-  openai: string;
-  glm: string;
-  glm_model: string;
+export interface ModelConfig {
+  provider_name: string;
+  api_endpoint: string;
+  api_key: string;
+  model_name: string;
 }
 
 export interface EmailConfig {
@@ -15,13 +15,30 @@ export interface EmailConfig {
   app_password: string;
 }
 
+export interface ScheduledTask {
+  name: string;
+  frequency: string;
+  day_of_month?: number | null;
+  day_of_week?: number | null;
+  hour?: number | null;
+  minute?: number | null;
+  interval_minutes?: number | null;
+  prompt: string;
+}
+
 export interface AppConfig {
-  active_model: string;
-  api_keys: ApiKeys;
+  text_model: ModelConfig;
+  transcribe_model: ModelConfig;
   system_prompt: string;
   ai_name: string;
   user_name: string;
   email: EmailConfig;
+  browser_profile_path: string;
+  enable_clipboard_helper: boolean;
+  enable_file_watcher: boolean;
+  enable_autostart: boolean;
+  accent_color: string;
+  schedule: ScheduledTask[];
 }
 
 export interface Message {
@@ -32,7 +49,7 @@ export interface Message {
   timestamp: string;
 }
 
-interface ChatContextType {
+interface ChatStore {
   messages: Message[];
   logs: string[];
   config: AppConfig | null;
@@ -45,77 +62,152 @@ interface ChatContextType {
   refreshConfig: () => Promise<void>;
 }
 
-const ChatContext = createContext<ChatContextType | undefined>(undefined);
+export const useChatStore = create<ChatStore>((set, get) => ({
+  messages: [],
+  logs: [],
+  config: null,
+  loading: false,
 
-export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [config, setConfig] = useState<AppConfig | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  addLog: (log: string) => {
+    set((state) => ({
+      logs: [...state.logs, `[${new Date().toLocaleTimeString()}] ${log}`],
+    }));
+  },
 
-  const addLog = (log: string) => {
-    setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${log}`]);
-  };
+  clearLogs: () => set({ logs: [] }),
 
-  const clearLogs = () => setLogs([]);
-
-  const refreshConfig = async () => {
+  refreshConfig: async () => {
     try {
       const saved = localStorage.getItem("echo_ai_config");
       if (saved) {
-        let parsed: AppConfig = JSON.parse(saved);
-        if (parsed.api_keys.glm === undefined) {
-          parsed.api_keys.glm = "";
-          localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
-        }
-        // Self-heal: If prompt is outdated, reload the new default from config.rs
-        if (!parsed.system_prompt.includes("Never make up or hallucinate")) {
+        let parsed: any = JSON.parse(saved);
+
+        if (!parsed.text_model || !parsed.transcribe_model) {
           localStorage.removeItem("echo_ai_config");
           const cfg = await invoke<AppConfig>("get_config");
-          setConfig(cfg);
+          set({ config: cfg });
           localStorage.setItem("echo_ai_config", JSON.stringify(cfg));
           await invoke("update_config", { config: cfg });
-          addLog("Upgraded system prompt to latest default instructions.");
+          get().addLog("Migrated legacy configuration to unified dynamic model format.");
           return;
         }
-        setConfig(parsed);
+
+        // Self-heal new productivity settings fields
+        let dirty = false;
+        if (parsed.browser_profile_path === undefined) {
+          parsed.browser_profile_path = "~/.echo-ai/browser-profile";
+          dirty = true;
+        }
+        if (parsed.enable_clipboard_helper === undefined) {
+          parsed.enable_clipboard_helper = false;
+          dirty = true;
+        }
+        if (parsed.enable_file_watcher === undefined) {
+          parsed.enable_file_watcher = false;
+          dirty = true;
+        }
+        if (parsed.enable_autostart === undefined) {
+          parsed.enable_autostart = false;
+          dirty = true;
+        }
+        if (parsed.accent_color === undefined) {
+          parsed.accent_color = "#00f0ff";
+          dirty = true;
+        }
+        if (parsed.schedule === undefined) {
+          parsed.schedule = [
+            {
+              name: "Morning briefing",
+              frequency: "daily",
+              day_of_month: null,
+              day_of_week: null,
+              hour: 9,
+              minute: 0,
+              interval_minutes: null,
+              prompt: "Check for unread emails and summarize them.",
+            },
+          ];
+          dirty = true;
+        } else {
+          let scheduleMigrated = false;
+          parsed.schedule = parsed.schedule.map((task: any) => {
+            if (task.frequency === undefined) {
+              scheduleMigrated = true;
+              return {
+                name: task.name,
+                frequency: "daily",
+                day_of_month: null,
+                day_of_week: null,
+                hour: task.hour ?? 9,
+                minute: task.minute ?? 0,
+                interval_minutes: null,
+                prompt: task.prompt,
+              };
+            }
+            return task;
+          });
+          if (scheduleMigrated) {
+            dirty = true;
+          }
+        }
+
+        if (dirty) {
+          localStorage.setItem("echo_ai_config", JSON.stringify(parsed));
+          get().addLog("Initialized default productivity settings for existing config.");
+        }
+
+        // Self-heal: If prompt is outdated, reload the new default from config.rs
+        if (!parsed.system_prompt.includes("Never make up or hallucinate") || !parsed.system_prompt.includes("Full Stack developer from Bangladesh")) {
+          localStorage.removeItem("echo_ai_config");
+          const cfg = await invoke<AppConfig>("get_config");
+          set({ config: cfg });
+          localStorage.setItem("echo_ai_config", JSON.stringify(cfg));
+          await invoke("update_config", { config: cfg });
+          get().addLog("Upgraded system prompt to latest default instructions.");
+          return;
+        }
+
+        if (parsed.accent_color) {
+          document.documentElement.style.setProperty("--accent-color-hex", parsed.accent_color);
+        }
+
+        set({ config: parsed });
         await invoke("update_config", { config: parsed });
-        addLog("Synced settings from local storage.");
+        get().addLog("Synced settings from local storage.");
       } else {
         const cfg = await invoke<AppConfig>("get_config");
-        setConfig(cfg);
+
+        if (cfg.accent_color) {
+          document.documentElement.style.setProperty("--accent-color-hex", cfg.accent_color);
+        }
+
+        set({ config: cfg });
         localStorage.setItem("echo_ai_config", JSON.stringify(cfg));
       }
     } catch (err) {
-      addLog(`Failed to fetch settings config: ${err}`);
+      get().addLog(`Failed to fetch settings config: ${err}`);
     }
-  };
+  },
 
-  useEffect(() => {
-    refreshConfig();
-
-    const unlisten = listen<string>("sidecar-log", (event) => {
-      setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${event.payload}`]);
-    });
-
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
-
-  const updateConfig = async (newConfig: AppConfig) => {
+  updateConfig: async (newConfig: AppConfig) => {
     try {
       await invoke("update_config", { config: newConfig });
-      setConfig(newConfig);
+
+      if (newConfig.accent_color) {
+        document.documentElement.style.setProperty("--accent-color-hex", newConfig.accent_color);
+      }
+
+      set({ config: newConfig });
       localStorage.setItem("echo_ai_config", JSON.stringify(newConfig));
-      addLog(`AI Configuration saved to local storage.`);
+      get().addLog(`AI Configuration saved to local storage.`);
     } catch (err) {
-      addLog(`Failed to update config: ${err}`);
+      get().addLog(`Failed to update config: ${err}`);
       throw err;
     }
-  };
+  },
 
-  const sendMessage = async (prompt: string) => {
+  sendMessage: async (prompt: string) => {
+    const { config } = get();
     if (!prompt.trim() || !config) return;
 
     const userMsg: Message = {
@@ -125,9 +217,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
-    setLoading(true);
-    addLog(`User submitted prompt: "${prompt}"`);
+    set((state) => ({
+      messages: [...state.messages, userMsg],
+      loading: true,
+    }));
+    get().addLog(`User submitted prompt: "${prompt}"`);
 
     try {
       const result = await invoke<string>("send_prompt", { prompt });
@@ -135,13 +229,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         id: Math.random().toString(36).substring(7),
         role: "assistant",
         content: result,
-        model: config.active_model,
+        model: config.text_model.model_name,
         timestamp: new Date().toLocaleTimeString(),
       };
-      setMessages((prev) => [...prev, assistantMsg]);
+      set((state) => ({
+        messages: [...state.messages, assistantMsg],
+      }));
     } catch (err) {
       const errMsg = String(err);
-      addLog(`Orchestrator error: ${errMsg}`);
+      get().addLog(`Orchestrator error: ${errMsg}`);
       const friendlyMessage =
         errMsg.includes("repeated tool loop") || errMsg.includes("Maximum tool execution loops reached")
           ? "⚠️ I stopped after a repeated tool cycle to avoid looping. Please try a smaller or clearer task."
@@ -153,35 +249,27 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         content: friendlyMessage,
         timestamp: new Date().toLocaleTimeString(),
       };
-      setMessages((prev) => [...prev, errMessageObj]);
+      set((state) => ({
+        messages: [...state.messages, errMessageObj],
+      }));
     } finally {
-      setLoading(false);
+      set({ loading: false });
     }
-  };
+  },
 
-  const clearChat = async () => {
+  clearChat: async () => {
     try {
       await invoke("clear_chat");
-      setMessages([]);
-      addLog("Message memory cleared.");
+      set({ messages: [] });
+      get().addLog("Message memory cleared.");
     } catch (err) {
-      addLog(`Failed to clear memory: ${err}`);
+      get().addLog(`Failed to clear memory: ${err}`);
     }
-  };
+  },
+}));
 
-  return (
-    <ChatContext.Provider
-      value={{ messages, logs, config, loading, addLog, clearLogs, sendMessage, updateConfig, clearChat, refreshConfig }}
-    >
-      {children}
-    </ChatContext.Provider>
-  );
-};
+useChatStore.getState().refreshConfig();
 
-export const useChatStore = () => {
-  const context = useContext(ChatContext);
-  if (!context) {
-    throw new Error("useChatStore must be used within a ChatProvider");
-  }
-  return context;
-};
+listen<string>("sidecar-log", (event) => {
+  useChatStore.getState().addLog(event.payload);
+});

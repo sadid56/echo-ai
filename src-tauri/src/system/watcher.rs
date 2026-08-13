@@ -1,7 +1,8 @@
 use notify::{Watcher, RecursiveMode, Result, Event};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
+use crate::ai::orchestrator::AppState;
 
 pub fn start_file_watcher(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
@@ -22,11 +23,21 @@ pub fn start_file_watcher(app: AppHandle) {
             let path = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
             let _ = w.watch(&path, RecursiveMode::Recursive);
             
-            // Keep watcher alive in scope
             let _w_holder = watcher;
             let mut last_trigger = std::time::Instant::now() - std::time::Duration::from_secs(10);
 
             while let Some(event) = rx.recv().await {
+                let enabled = if let Some(state) = app.try_state::<AppState>() {
+                    let conf = state.config.lock().unwrap();
+                    conf.enable_file_watcher
+                } else {
+                    false
+                };
+                
+                if !enabled {
+                    continue;
+                }
+
                 if last_trigger.elapsed() < std::time::Duration::from_millis(2000) {
                     continue;
                 }
@@ -49,7 +60,6 @@ pub fn start_file_watcher(app: AppHandle) {
                     
                     tauri::async_runtime::spawn(async move {
                         let cur_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-                        // Check if we are inside echo-ai root, and run cargo check inside src-tauri
                         let check_path = if cur_dir.join("src-tauri").exists() {
                             cur_dir.join("src-tauri")
                         } else {

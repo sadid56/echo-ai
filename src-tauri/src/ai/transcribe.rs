@@ -9,30 +9,34 @@ pub async fn transcribe(
     audio_base64: &str,
     mime_type: &str,
 ) -> Result<String, String> {
-    let (config, active_model) = {
+    let config = {
         let conf = state.config.lock().unwrap();
-        (conf.clone(), conf.active_model.clone())
+        conf.clone()
     };
 
     // Decode base64 audio
     let audio_bytes = STANDARD.decode(audio_base64)
         .map_err(|e| format!("Failed to decode base64 audio: {}", e))?;
 
-    // Determine transcription provider based on active model and available keys
-    if active_model == "OpenAI" || (!config.api_keys.openai.is_empty() && active_model != "Gemini") {
-        let api_key = config.api_keys.openai.clone();
-        if api_key.is_empty() {
-            return Err("OpenAI API key is required for transcription.".to_string());
+    let api_key = config.transcribe_model.api_key.clone();
+    let api_endpoint = config.transcribe_model.api_endpoint.clone();
+    let model_name = config.transcribe_model.model_name.clone();
+
+    // Determine transcription provider based on endpoint URL
+    let is_whisper = api_endpoint.contains("transcriptions") || api_endpoint.contains("openai");
+
+    if is_whisper {
+        let is_local = api_endpoint.contains("localhost") || api_endpoint.contains("127.0.0.1");
+        if api_key.is_empty() && !is_local {
+            return Err("API key is required for Whisper transcription.".to_string());
         }
 
-        // Call OpenAI Whisper API
-        let url = "https://api.openai.com/v1/audio/transcriptions";
+        // Call Whisper API
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
             .build()
             .map_err(|e| e.to_string())?;
 
-        // Determine file name/extension from mime type
         let ext = if mime_type.contains("wav") {
             "wav"
         } else if mime_type.contains("mp3") {
@@ -52,11 +56,14 @@ pub async fn transcribe(
 
         let form = reqwest::multipart::Form::new()
             .part("file", part)
-            .text("model", "whisper-1");
+            .text("model", model_name);
 
-        let res = client.post(url)
-            .header("Authorization", format!("Bearer {}", api_key))
-            .multipart(form)
+        let mut req = client.post(&api_endpoint);
+        if !api_key.is_empty() {
+            req = req.header("Authorization", format!("Bearer {}", api_key));
+        }
+
+        let res = req.multipart(form)
             .send()
             .await
             .map_err(|e| e.to_string())?;
@@ -64,7 +71,7 @@ pub async fn transcribe(
         let status = res.status();
         if !status.is_success() {
             let err_text = res.text().await.unwrap_or_default();
-            return Err(format!("OpenAI Whisper API error ({}): {}", status, err_text));
+            return Err(format!("Whisper API error ({}): {}", status, err_text));
         }
 
         let res_json: Value = res.json().await.map_err(|e| e.to_string())?;
@@ -73,20 +80,20 @@ pub async fn transcribe(
 
         Ok(text.to_string())
     } else {
-        // Fallback to Gemini 1.5 Flash
-        let api_key = config.api_keys.gemini.clone();
         if api_key.is_empty() {
-            return Err("Either OpenAI API key (for Whisper) or Gemini API key (for Gemini 1.5 Flash) is required for transcription.".to_string());
+            return Err("API key is required for Gemini transcription.".to_string());
         }
 
-        let url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}",
-            api_key
-        );
+        let url = if api_endpoint.contains("key=") {
+            api_endpoint
+        } else if api_endpoint.contains('?') {
+            format!("{}&key={}", api_endpoint, api_key)
+        } else {
+            format!("{}?key={}", api_endpoint, api_key)
+        };
 
         let actual_mime = if mime_type.is_empty() { "audio/webm" } else { mime_type };
 
-        // Gemini expects base64 representation of audio in the inlineData payload
         let body = json!({
             "contents": [{
                 "parts": [
