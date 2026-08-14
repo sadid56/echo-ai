@@ -13,6 +13,8 @@ import { GoogleSearchSettings } from "../features/settings/GoogleSearchSettings"
 import { PersonalizationSettings } from "../features/settings/PersonalizationSettings";
 import { ScheduleSettings } from "../features/settings/ScheduleSettings";
 import { LibrarySettings } from "../features/settings/LibrarySettings";
+import { TelegramSettings } from "../features/settings/TelegramSettings";
+import { TelegramUserSettings } from "../features/settings/TelegramUserSettings";
 
 type SettingsFormValues = {
   text_provider_name: string;
@@ -42,6 +44,15 @@ type SettingsFormValues = {
   enable_file_watcher: boolean;
   enable_autostart: boolean;
   accent_color: string;
+  
+  telegramToken: string;
+  telegramChatId: string;
+  telegramEnabled: boolean;
+
+  telegramUserApiId: string;
+  telegramUserApiHash: string;
+  telegramUserPhoneNumber: string;
+  telegramUserEnabled: boolean;
 };
 
 const buildDefaultValues = (config: AppConfig | null): SettingsFormValues => ({
@@ -72,6 +83,15 @@ const buildDefaultValues = (config: AppConfig | null): SettingsFormValues => ({
   enable_file_watcher: config?.enable_file_watcher ?? false,
   enable_autostart: config?.enable_autostart ?? false,
   accent_color: config?.accent_color ?? "#00f0ff",
+
+  telegramToken: config?.telegram?.token ?? "",
+  telegramChatId: config?.telegram?.chat_id ?? "",
+  telegramEnabled: config?.telegram?.enabled ?? false,
+
+  telegramUserApiId: config?.telegram_user?.api_id ?? "",
+  telegramUserApiHash: config?.telegram_user?.api_hash ?? "",
+  telegramUserPhoneNumber: config?.telegram_user?.phone_number ?? "",
+  telegramUserEnabled: config?.telegram_user?.enabled ?? false,
 });
 
 export function SettingsScreen() {
@@ -163,6 +183,17 @@ export function SettingsScreen() {
         cse_id: values.googleSearchCseId,
         engine: values.googleSearchEngine,
       },
+      telegram: {
+        token: values.telegramToken,
+        chat_id: values.telegramChatId,
+        enabled: values.telegramEnabled,
+      },
+      telegram_user: {
+        api_id: values.telegramUserApiId,
+        api_hash: values.telegramUserApiHash,
+        phone_number: values.telegramUserPhoneNumber,
+        enabled: values.telegramUserEnabled,
+      },
       browser_profile_path: values.browser_profile_path,
       enable_clipboard_helper: values.enable_clipboard_helper,
       enable_file_watcher: values.enable_file_watcher,
@@ -191,6 +222,8 @@ export function SettingsScreen() {
             {activeTab === "transcribeModel" && <TranscribeModelSettings register={register} setValue={setValue} />}
             {activeTab === "email" && <EmailSettings register={register} />}
             {activeTab === "googleSearch" && <GoogleSearchSettings register={register} watch={watch} setValue={setValue} />}
+            {activeTab === "telegram" && <TelegramSettings register={register} watch={watch} />}
+            {activeTab === "telegramUser" && <TelegramUserSettings register={register} watch={watch} />}
             {activeTab === "personalization" && <PersonalizationSettings register={register} watch={watch} setValue={setValue} />}
             {activeTab === "schedule" && <ScheduleSettings scheduleList={scheduleList} setScheduleList={setScheduleList} />}
             {activeTab === "library" && <LibrarySettings setValue={setValue} />}

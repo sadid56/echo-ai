@@ -9,4 +9,5 @@ pub mod clipboard_helper;
 pub mod autostart;
 pub mod google_search;
 pub mod spotify;
-
+pub mod telegram;
+pub mod telegram_user;

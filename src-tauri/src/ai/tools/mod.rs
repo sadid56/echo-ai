@@ -1,5 +1,5 @@
 use crate::ai::providers::ToolDefinition;
-use crate::system::{file_system, terminal, clipboard, notification, git, google_search};
+use crate::system::{file_system, terminal, clipboard, notification, git, google_search, telegram, telegram_user};
 use crate::sidecar::process_manager;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
@@ -222,6 +222,64 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
                 "required": ["action"]
             }),
         },
+        ToolDefinition {
+            name: "send_telegram".to_string(),
+            description: "Send a Telegram notification/message/alert to the user".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "The message text to send to the authorized chat"
+                    }
+                },
+                "required": ["message"]
+            }),
+        },
+        ToolDefinition {
+            name: "telegram_user_get_chats".to_string(),
+            description: "List recent personal chats/groups/conversations on Telegram".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "telegram_user_get_messages".to_string(),
+            description: "Get recent messages from a specific Telegram chat by ID".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "chat_id": {
+                        "type": "integer",
+                        "description": "The target Telegram chat ID (group or user ID)"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "The number of messages to fetch (default: 10, max: 50)"
+                    }
+                },
+                "required": ["chat_id"]
+            }),
+        },
+        ToolDefinition {
+            name: "telegram_user_send_message".to_string(),
+            description: "Send/reply to a specific personal Telegram chat/username/user ID".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "chat_id": {
+                        "type": "integer",
+                        "description": "The target Telegram chat ID"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "The text message content to send"
+                    }
+                },
+                "required": ["chat_id", "message"]
+            }),
+        },
     ]
 }
 
@@ -329,6 +387,33 @@ pub async fn execute_tool(
             let action = args_val["action"].as_str().ok_or("Missing 'action' argument")?;
             let query = args_val["query"].as_str();
             crate::system::spotify::control_spotify(app.clone(), action, query).await
+        }
+        "send_telegram" => {
+            let message = args_val["message"].as_str().ok_or("Missing 'message' argument")?;
+            let state = app.state::<AppState>();
+            let (token, chat_id, enabled) = {
+                let conf = state.config.lock().unwrap();
+                (conf.telegram.token.clone(), conf.telegram.chat_id.clone(), conf.telegram.enabled)
+            };
+            
+            if !enabled {
+                return Err("Telegram integration is disabled in settings.".to_string());
+            }
+            
+            telegram::send_telegram(&token, &chat_id, message).await
+        }
+        "telegram_user_get_chats" => {
+            telegram_user::execute_single_command(app.clone(), "GET_CHATS").await
+        }
+        "telegram_user_get_messages" => {
+            let chat_id = args_val["chat_id"].as_i64().ok_or("Missing 'chat_id' argument")?;
+            let limit = args_val["limit"].as_i64().unwrap_or(10);
+            telegram_user::execute_single_command(app.clone(), &format!("GET_MESSAGES:{}:{}", chat_id, limit)).await
+        }
+        "telegram_user_send_message" => {
+            let chat_id = args_val["chat_id"].as_i64().ok_or("Missing 'chat_id' argument")?;
+            let message = args_val["message"].as_str().ok_or("Missing 'message' argument")?;
+            telegram_user::execute_single_command(app.clone(), &format!("SEND_MESSAGE:{}:{}", chat_id, message)).await
         }
         _ => Err(format!("Unknown tool: {}", name)),
     }

@@ -13,6 +13,7 @@ use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 use crate::ai::providers::Attachment;
+use crate::system::telegram_user::{start_telegram_user_bridge, send_telegram_user_otp, send_telegram_user_password};
 
 #[tauri::command]
 async fn send_prompt(
@@ -165,6 +166,7 @@ pub fn run() {
             let handle = app.handle().clone();
             crate::system::watcher::start_file_watcher(handle.clone());
             crate::system::scheduler::start_scheduler(handle.clone());
+            crate::system::telegram::start_telegram_listener(handle.clone());
             crate::system::clipboard_helper::start_clipboard_helper(handle);
             
             // System Tray Menu Setup
@@ -217,7 +219,10 @@ pub fn run() {
             clear_chat,
             transcribe_audio,
             start_recording,
-            stop_recording
+            stop_recording,
+            start_telegram_user_bridge,
+            send_telegram_user_otp,
+            send_telegram_user_password
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

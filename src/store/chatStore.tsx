@@ -34,6 +34,19 @@ export interface GoogleSearchConfig {
   engine: string;
 }
 
+export interface TelegramConfig {
+  token: string;
+  chat_id: string;
+  enabled: boolean;
+}
+
+export interface TelegramUserConfig {
+  api_id: string;
+  api_hash: string;
+  phone_number: string;
+  enabled: boolean;
+}
+
 export interface AppConfig {
   text_model: ModelConfig;
   transcribe_model: ModelConfig;
@@ -42,6 +55,8 @@ export interface AppConfig {
   user_name: string;
   email: EmailConfig;
   google_search: GoogleSearchConfig;
+  telegram: TelegramConfig;
+  telegram_user: TelegramUserConfig;
   browser_profile_path: string;
   enable_clipboard_helper: boolean;
   enable_file_watcher: boolean;
@@ -209,6 +224,23 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           dirty = true;
         } else if (parsed.google_search.engine === undefined) {
           parsed.google_search.engine = "duckduckgo";
+          dirty = true;
+        }
+        if (parsed.telegram === undefined) {
+          parsed.telegram = {
+            token: "",
+            chat_id: "",
+            enabled: false,
+          };
+          dirty = true;
+        }
+        if (parsed.telegram_user === undefined) {
+          parsed.telegram_user = {
+            api_id: "",
+            api_hash: "",
+            phone_number: "",
+            enabled: false,
+          };
           dirty = true;
         }
         if (parsed.schedule === undefined) {

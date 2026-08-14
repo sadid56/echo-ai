@@ -1,8 +1,8 @@
 import React from "react";
-import { Sparkles, Mic, Mail, Zap, Clock, ChevronLeft, Library, Globe } from "lucide-react";
+import { Sparkles, Mic, Mail, Zap, Clock, ChevronLeft, Library, Globe, Send, User } from "lucide-react";
 import { cn } from "../../lib/cn";
 
-export type SettingsTab = "textModel" | "transcribeModel" | "email" | "googleSearch" | "personalization" | "schedule" | "library";
+export type SettingsTab = "textModel" | "transcribeModel" | "email" | "googleSearch" | "personalization" | "schedule" | "library" | "telegram" | "telegramUser";
 
 interface SidebarItem {
   id: SettingsTab;
@@ -15,6 +15,8 @@ const sidebarItems: SidebarItem[] = [
   { id: "transcribeModel", label: "Transcription", icon: Mic },
   { id: "email", label: "Email Integration", icon: Mail },
   { id: "googleSearch", label: "Search Engine", icon: Globe },
+  { id: "telegram", label: "Telegram Bot", icon: Send },
+  { id: "telegramUser", label: "Telegram Chat", icon: User },
   { id: "personalization", label: "Core & Tweaks", icon: Zap },
   { id: "schedule", label: "Schedule Setup", icon: Clock },
   { id: "library", label: "Configuration Library", icon: Library },
