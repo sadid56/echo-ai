@@ -102,7 +102,7 @@ pub fn start_scheduler(app: AppHandle) {
                         if let Some(state) = app_clone.try_state::<AppState>() {
                             match Orchestrator::process_prompt(app_clone.clone(), &state, &prompt, None).await {
                                 Ok(res) => {
-                                    let _ = app_clone.emit("sidecar-log", format!("[Scheduler Success] Completed routine for '{}'. Output length: {}", task.name, res.len()));
+                                    let _ = app_clone.emit("sidecar-log", format!("[Scheduler Success] Completed routine for '{}'. Output length: {}", task.name, res.content.len()));
                                 }
                                 Err(err) => {
                                     let _ = app_clone.emit("sidecar-log", format!("[Scheduler Err] Routine failed for '{}': {}", task.name, err));

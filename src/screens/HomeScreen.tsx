@@ -9,6 +9,16 @@ import { getFriendlyMessage, getToolMessage } from "../lib/loaderMessages";
 import { CustomMarkdown } from "../components/common/custom-markdown";
 import { FlipWords } from "../components/ui/flipWords";
 
+const formatTokens = (tokens: number) => {
+  if (tokens >= 1000000) {
+    return (tokens / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+  if (tokens >= 1000) {
+    return (tokens / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  }
+  return tokens.toString();
+};
+
 export function HomeScreen() {
   const [showVoice, setShowVoice] = useState(false);
   const { config, messages, logs, loading, showLogs, setShowLogs } = useChatStore();
@@ -28,7 +38,7 @@ export function HomeScreen() {
   return (
     <>
       <main className='flex flex-col flex-1 overflow-hidden relative'>
-        <div ref={scrollRef} className='flex-1 overflow-y-auto px-4 py-8 md:px-12 pb-[240px] scroll-smooth'>
+        <div ref={scrollRef} className='flex-1 overflow-y-auto px-4 py-8 md:px-12 pb-[280px] scroll-smooth'>
             {messages.length === 0 ? (
               /* PREVIOUS SWEET SPOT AI CORE */
               <div className='flex h-full flex-col items-center justify-center space-y-12 animate-in fade-in zoom-in-95 duration-1000'>
@@ -101,7 +111,10 @@ export function HomeScreen() {
                             <span className='text-[13px] font-semibold text-accent-cyan/90 tracking-wide'>
                               {message.model ?? config?.text_model?.model_name ?? "Echo"}
                             </span>
-                            <span className='text-[10px] text-white/30 tracking-wider font-mono'>{message.timestamp}</span>
+                            <span className='text-[10px] text-slate-200 font-medium tracking-wider'>
+                              {message.timestamp}
+                              {message.tokens_used !== undefined && message.tokens_used > 0 && ` • ${formatTokens(message.tokens_used)} tokens`}
+                            </span>
                           </div>
 
                           <CustomMarkdown content={message.content} />
@@ -195,8 +208,8 @@ export function HomeScreen() {
           </div>
         </main>
 
-      <Drawer open={showLogs} onOpenChange={setShowLogs}>
-        <div className='flex-1 flex flex-col min-h-0 bg-[#08080a]/95 backdrop-blur-xl p-4 border-l border-white/5 shadow-2xl'>
+      <Drawer title="System Logs" description="Real-time AI execution logs & event traces" hideHeader open={showLogs} onOpenChange={setShowLogs}>
+        <div className='flex-1 flex flex-col min-h-0 shadow-2xl'>
           <Logs recentLogs={recentLogs} setShowLogs={(val) => setShowLogs(typeof val === 'function' ? val(showLogs) : val)} />
         </div>
       </Drawer>

@@ -12,13 +12,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 
-    "bg-accent-cyan text-[#08080a] hover:bg-accent-cyan/90 hover:shadow-[0_0_15px_rgba(0,240,255,0.25)] focus:ring-2 focus:ring-accent-cyan/20 active:scale-[0.97] border border-accent-cyan/10",
+    "bg-accent-cyan text-[#08080a] hover:bg-accent-cyan/90 hover:shadow-[0_0_15px_rgba(0,240,255,0.25)] focus:ring-2 focus:ring-accent-cyan/20 border border-accent-cyan/10",
   secondary:
-    "border border-white/10 bg-white/[0.04] text-text-main hover:bg-white/[0.08] active:bg-white/[0.12] active:scale-[0.97] focus:ring-2 focus:ring-white/10",
+    "border border-white/10 bg-white/[0.04] text-text-main hover:bg-white/[0.08] active:bg-white/[0.12] focus:ring-2 focus:ring-white/10",
   ghost: 
-    "bg-transparent text-text-muted hover:bg-white/[0.04] hover:text-text-main active:bg-white/[0.08] active:scale-[0.98]",
+    "bg-transparent text-text-muted hover:bg-white/[0.04] hover:text-text-main active:bg-white/[0.08]",
   error: 
-    "bg-red-500 text-white hover:bg-red-400 active:bg-red-600 active:scale-[0.97] border border-red-500/10 focus:ring-2 focus:ring-red-500/20",
+    "bg-red-500 text-white hover:bg-red-400 active:bg-red-600 border border-red-500/10 focus:ring-2 focus:ring-red-500/20",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

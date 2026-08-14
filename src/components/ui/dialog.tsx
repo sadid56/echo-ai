@@ -39,7 +39,7 @@ export function Dialog({ open, onClose, title, description, children, className 
         >
           {/* Header */}
           <div className='border-b border-border-color/30 pb-3 mb-4 select-none'>
-            <h3 className='text-xs font-extrabold uppercase tracking-[0.16rem] text-accent-cyan'>{title}</h3>
+            <h3 className='text-xl font-medium text-accent-cyan'>{title}</h3>
             {description && <p className='text-[10px] text-text-muted mt-0.5'>{description}</p>}
           </div>
 
@@ -48,7 +48,7 @@ export function Dialog({ open, onClose, title, description, children, className 
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 

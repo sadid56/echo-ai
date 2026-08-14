@@ -7,3 +7,6 @@ pub mod watcher;
 pub mod scheduler;
 pub mod clipboard_helper;
 pub mod autostart;
+pub mod google_search;
+pub mod spotify;
+

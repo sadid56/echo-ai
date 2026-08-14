@@ -39,6 +39,9 @@ pub struct ToolDefinition {
 pub struct ProviderResponse {
     pub content: Option<String>,
     pub tool_calls: Option<Vec<ToolCall>>,
+    pub prompt_tokens: Option<u32>,
+    pub completion_tokens: Option<u32>,
+    pub total_tokens: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

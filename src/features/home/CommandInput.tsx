@@ -1,4 +1,4 @@
-import { Mic, Plus, Sparkles, Mail, GitBranch, Bug, Code, Terminal, Square, ArrowUp, File } from "lucide-react";
+import { Mic, Plus, Sparkles, Mail, GitBranch, Bug, Code, Terminal, Square, ArrowUp, File, Music } from "lucide-react";
 import { type KeyboardEvent, type SyntheticEvent, useState, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import { useChatStore } from "../../store/chatStore";
@@ -132,6 +132,11 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick }) => {
       label: "Fetch unread emails",
       prompt: "Fetch my latest unread emails and summarize them.",
       icon: <Mail className="w-3.5 h-3.5 text-blue-400" />
+    },
+    {
+      label: "Play music",
+      prompt: "Play some music on Spotify.",
+      icon: <Music className="w-3.5 h-3.5 text-cyan-400" />
     },
     {
       label: "Review git diff",

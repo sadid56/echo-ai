@@ -20,7 +20,7 @@ async fn send_prompt(
     state: State<'_, AppState>,
     prompt: String,
     attachments: Option<Vec<Attachment>>,
-) -> Result<String, String> {
+) -> Result<crate::ai::orchestrator::OrchestratorResult, String> {
     crate::ai::orchestrator::Orchestrator::process_prompt(app, &state, &prompt, attachments).await
 }
 

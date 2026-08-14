@@ -83,6 +83,15 @@ export const getFriendlyMessage = (category: keyof typeof LOADER_MESSAGES, cache
 };
 
 export const getToolMessage = (toolName: string, args: any): string => {
+  if (toolName === "control_spotify" && args.action) {
+    if (args.action === "play") return "🎵 Starting playback on Spotify...";
+    if (args.action === "pause") return "⏸️ Pausing Spotify...";
+    if (args.action === "next") return "⏭️ Skipping to next song...";
+    if (args.action === "prev") return "⏮️ Playing previous song...";
+    if (args.action === "open") return "🎧 Launching Spotify...";
+    if (args.action === "search" && args.query) return `🔍 Searching Spotify for "${args.query}"...`;
+    return "🎵 Controlling Spotify...";
+  }
   if (toolName === "run_browser_agent" && args.task) {
     return `🌐 Browsing: "${args.task}"...`;
   }
@@ -102,6 +111,7 @@ export const getToolMessage = (toolName: string, args: any): string => {
   }
 
   // Fallbacks
+  if (toolName === "google_search") return "🔍 Searching the web...";
   if (toolName === "run_browser_agent") return "🌐 Launching browser assistant...";
   if (toolName === "execute_command") return "💻 Executing terminal command...";
   if (toolName === "read_file") return "📖 Reading file contents...";

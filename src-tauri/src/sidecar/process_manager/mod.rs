@@ -219,3 +219,61 @@ pub async fn run_email_agent(
     }
 }
 
+pub async fn run_ddg_search(
+    app: AppHandle,
+    query: &str,
+) -> Result<String, String> {
+    let mut script_path = PathBuf::from(".");
+    script_path.push("sidecars");
+    script_path.push("ddg_search.py");
+    
+    if !script_path.exists() {
+        script_path = PathBuf::from("..");
+        script_path.push("sidecars");
+        script_path.push("ddg_search.py");
+    }
+
+    let script_str = script_path.to_string_lossy().to_string();
+    
+    let mut cmd = Command::new(get_python_executable());
+    cmd.arg(&script_str)
+       .arg(query);
+
+    let mut child = cmd
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start DuckDuckGo search sidecar: {}", e))?;
+
+    let stdout = child.stdout.take().ok_or("Failed to open stdout pipe")?;
+    let stderr = child.stderr.take().ok_or("Failed to open stderr pipe")?;
+    
+    let mut reader = BufReader::new(stdout).lines();
+    let mut err_reader = BufReader::new(stderr).lines();
+    
+    let app_clone = app.clone();
+    tokio::spawn(async move {
+        while let Ok(Some(line)) = err_reader.next_line().await {
+            let log_msg = format!("[DDG Err] {}", line);
+            let _ = app_clone.emit("sidecar-log", log_msg);
+        }
+    });
+
+    let mut final_output = String::new();
+
+    while let Ok(Some(line)) = reader.next_line().await {
+        let log_msg = format!("[DDG] {}", line);
+        let _ = app.emit("sidecar-log", log_msg);
+        final_output.push_str(&line);
+    }
+
+    let status = child.wait().await.map_err(|e| format!("Failed to wait on child: {}", e))?;
+    
+    if status.success() {
+        Ok(final_output)
+    } else {
+        Err(format!("DuckDuckGo search process exited with failure status: {:?}", status.code()))
+    }
+}
+
+

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { UseFormSetValue } from "react-hook-form";
 import { Button } from "../../components/ui/button";
 import { TextField } from "../../components/ui/textField";
+import { Card } from "../../components/ui/Card";
+import { SectionHeader } from "../../components/ui/SectionHeader";
 
 interface LibraryPreset {
   id: string;
@@ -74,63 +76,63 @@ export function LibrarySettings({ setValue }: LibrarySettingsProps) {
   };
 
   return (
-    <div className="space-y-4 animate-fadeIn">
-      <div className="space-y-3.5">
-        <h3 className="border-l-2 border-accent-cyan pl-2 text-[10.5px] font-bold uppercase tracking-wider text-accent-cyan">
-          Configuration Library
-        </h3>
+    <div className="space-y-6 animate-fadeIn">
+      <div className="space-y-4">
+        <SectionHeader>Configuration Library</SectionHeader>
         <p className="text-xs text-text-muted">
           Save custom AI providers or credentials setup to quickly reload them later.
         </p>
 
         {presets.length === 0 ? (
-          <p className="text-xs text-text-muted italic bg-bg-secondary/40 p-4 rounded-xl border border-border-color/20">
+          <p className="text-xs text-text-muted italic bg-bg-secondary/40 p-4.5 rounded-2xl border border-border-color/20">
             No saved presets in your library. Add one below!
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3.5">
             {presets.map((preset) => (
               <div
                 key={preset.id}
-                className="flex items-center justify-between bg-bg-secondary/60 p-4 rounded-xl border border-border-color/40 shadow-sm"
+                className="flex items-center justify-between bg-bg-secondary/60 p-4.5 rounded-2xl border border-border-color/30 shadow-sm transition-all duration-200"
               >
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <span className="text-xs font-bold text-accent-cyan">{preset.name}</span>
-                    <span className="text-[10px] bg-bg-primary border border-border-color px-2.5 py-0.5 rounded text-text-muted font-mono">
+                    <span className="text-[10px] bg-bg-primary border border-border-color/60 px-2.5 py-0.5 rounded-lg text-text-muted font-mono">
                       {preset.provider_name} - {preset.model_name}
                     </span>
                   </div>
                   <p className="mt-1 text-[10px] text-text-muted truncate max-w-md">{preset.api_endpoint}</p>
                 </div>
-                <div className="flex items-center gap-2 pl-4">
+                <div className="flex items-center gap-2 pl-4 shrink-0">
                   <Button variant="secondary" size="sm" onClick={() => loadPreset(preset)}>
                     Load
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => deletePreset(preset.id)}
-                    className="text-accent-red hover:text-accent-red/80 font-bold uppercase text-[10px]"
+                    className="p-1.5 px-3 rounded-xl hover:bg-accent-red/10 text-accent-red hover:text-accent-red transition-all text-xs font-semibold cursor-pointer"
                   >
                     Delete
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        <div className="bg-bg-secondary/40 p-4 rounded-xl border border-border-color/30 mt-4 space-y-3.5">
-          <h4 className="text-[10px] font-bold uppercase tracking-wider text-text-muted border-b border-border-color/30 pb-1.5">
-            Save Current/New Configuration Setup
-          </h4>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="mt-6 space-y-6">
+          <div>
+            <h4 className="text-[13px] font-bold uppercase tracking-wider text-text-muted">
+              Save Current/New Configuration Setup
+            </h4>
+          </div>
+          
+          <div className="grid gap-6 sm:grid-cols-2">
             <TextField label="Preset Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My OpenRouter Setup" />
             <TextField label="Provider Name" value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="OpenRouter" />
           </div>
           <TextField label="API Endpoint URL" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://openrouter.ai/api/v1/chat/completions" />
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-3">
             <TextField label="API Key" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-or-..." />
             <TextField label="Model ID" value={model} onChange={(e) => setModel(e.target.value)} placeholder="google/gemini-2.5-flash" />
             <TextField label="Max Tokens Limit" type="number" value={maxTokens} onChange={(e) => setMaxTokens(e.target.value)} placeholder="16000" />
@@ -138,7 +140,7 @@ export function LibrarySettings({ setValue }: LibrarySettingsProps) {
           <Button variant="primary" fullWidth onClick={savePreset}>
             Save to Preset Library
           </Button>
-        </div>
+        </Card>
       </div>
     </div>
   );

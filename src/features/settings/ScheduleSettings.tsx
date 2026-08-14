@@ -3,6 +3,8 @@ import { TextField } from "../../components/ui/textField";
 import { Dropdown } from "../../components/ui/dropdown";
 import { Button } from "../../components/ui/button";
 import { ScheduledTask } from "../../store/chatStore";
+import { Card } from "../../components/ui/Card";
+import { SectionHeader } from "../../components/ui/SectionHeader";
 
 interface ScheduleSettingsProps {
   scheduleList: ScheduledTask[];
@@ -75,69 +77,60 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
   };
 
   return (
-    <div className='space-y-4 animate-fadeIn'>
-      <div className='space-y-3.5'>
-        <h3 className='border-l-2 border-accent-cyan pl-2 text-[10.5px] font-bold uppercase tracking-wider text-accent-cyan'>
-          Scheduled Tasks & Cron Setup
-        </h3>
+    <div className='space-y-6 animate-fadeIn'>
+      <div className='space-y-4'>
+        <SectionHeader>Scheduled Tasks & Cron Setup</SectionHeader>
 
         {scheduleList.length === 0 ? (
-          <p className='text-xs text-text-muted italic bg-bg-secondary/40 p-4 rounded-xl border border-border-color/20'>
+          <p className='text-xs text-text-muted italic bg-bg-secondary/40 p-4.5 rounded-2xl border border-border-color/20'>
             No scheduled routine tasks configured. Add one below!
           </p>
         ) : (
-          <div className='space-y-2'>
+          <div className='space-y-3.5'>
             {scheduleList.map((task, idx) => (
               <div
                 key={idx}
-                className='flex items-center justify-between bg-bg-secondary/60 p-4 rounded-xl border border-border-color/40 shadow-sm'
+                className='flex items-center justify-between bg-bg-secondary/60 p-4.5 rounded-2xl border border-border-color/30 shadow-sm transition-all duration-200'
               >
                 <div>
-                  <div className='flex items-center gap-2'>
+                  <div className='flex items-center gap-2.5'>
                     <span className='text-xs font-bold text-accent-cyan'>{task.name}</span>
-                    <span className='text-[10px] bg-bg-primary border border-border-color px-2.5 py-0.5 rounded text-text-muted font-mono'>
+                    <span className='text-[10px] bg-bg-primary border border-border-color/60 px-2.5 py-0.5 rounded-lg text-text-muted font-mono'>
                       {formatTaskScheduleLabel(task)}
                     </span>
                   </div>
                   <p className='mt-1 text-xs text-text-muted line-clamp-1'>{task.prompt}</p>
                 </div>
-                <Button
-                  variant='ghost'
-                  size='sm'
+                <button
+                  type='button'
                   onClick={() => handleRemoveTask(idx)}
-                  className='text-[10px] text-accent-red hover:text-accent-red/80 border-none shadow-none font-bold uppercase tracking-wider pl-4'
+                  className='p-1.5 px-3 rounded-xl hover:bg-accent-red/10 text-accent-red hover:text-accent-red transition-all text-xs font-semibold cursor-pointer shrink-0'
                 >
                   Remove
-                </Button>
+                </button>
               </div>
             ))}
           </div>
         )}
 
-        <div className='bg-bg-secondary/40 p-4 rounded-xl border border-border-color/30 mt-4 space-y-3.5'>
-          <h4 className='text-[10px] font-bold uppercase tracking-wider text-text-muted border-b border-border-color/30 pb-1.5'>
-            Add New Scheduled Task
-          </h4>
-          <div className='grid gap-4 sm:grid-cols-2'>
+        <Card className='mt-6 space-y-6'>
+          <div>
+            <h4 className='text-[13px] font-bold uppercase tracking-wider text-text-muted'>Add New Scheduled Task</h4>
+          </div>
+
+          <div className='grid gap-6 sm:grid-cols-2'>
             <TextField
               label='Task Name'
               value={newTaskName}
               onChange={(e) => setNewTaskName(e.target.value)}
               placeholder='e.g., Morning Briefing Summary'
             />
-            <div className='space-y-1'>
-              <label className='text-[9.5px] font-bold uppercase tracking-wider text-text-muted select-none'>
-                Frequency Schedule
-              </label>
-              <Dropdown
-                value={newTaskFrequency}
-                onChange={(nextValue) => setNewTaskFrequency(nextValue)}
-                options={frequencyOptions}
-              />
-            </div>
+            <Dropdown value={newTaskFrequency} onChange={(nextValue) => setNewTaskFrequency(nextValue)} options={frequencyOptions} />
           </div>
 
-          <div className='grid gap-4 sm:grid-cols-3 bg-bg-primary/20 p-3 rounded-lg border border-border-color/10'>
+          <div
+            className={`grid gap-6 ${newTaskFrequency === "weekly" || newTaskFrequency === "monthly" ? "sm:grid-cols-3" : "sm:grid-cols-2"} bg-bg-primary/20 rounded-xl border border-border-color/10`}
+          >
             {newTaskFrequency === "interval" ? (
               <div className='sm:col-span-3'>
                 <TextField
@@ -162,10 +155,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
                 )}
 
                 {newTaskFrequency === "weekly" && (
-                  <div className='space-y-1'>
-                    <label className='text-[9.5px] font-bold uppercase tracking-wider text-text-muted select-none'>
-                      Day of Week
-                    </label>
+                  <div className='space-y-2'>
                     <Dropdown
                       value={String(newTaskDayOfWeek)}
                       onChange={(val) => setNewTaskDayOfWeek(Number(val))}
@@ -186,6 +176,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
                   label='Hour (0-23)'
                   type='number'
                   min={0}
+                  className='w-full'
                   max={23}
                   value={newTaskHour}
                   onChange={(e) => setNewTaskHour(Math.min(23, Math.max(0, Number(e.target.value))))}
@@ -214,7 +205,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
           <Button variant='primary' fullWidth onClick={handleAddTask}>
             Add Task to Schedule
           </Button>
-        </div>
+        </Card>
       </div>
     </div>
   );

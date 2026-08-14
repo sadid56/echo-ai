@@ -177,9 +177,16 @@ impl OpenAiCompatibleProvider {
             }
         }
 
+        let prompt_tokens = res_json["usage"]["prompt_tokens"].as_u64().map(|v| v as u32);
+        let completion_tokens = res_json["usage"]["completion_tokens"].as_u64().map(|v| v as u32);
+        let total_tokens = res_json["usage"]["total_tokens"].as_u64().map(|v| v as u32);
+
         Ok(ProviderResponse {
             content: response_content,
             tool_calls,
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
         })
     }
 }

@@ -28,6 +28,12 @@ export interface ScheduledTask {
   prompt: string;
 }
 
+export interface GoogleSearchConfig {
+  api_key: string;
+  cse_id: string;
+  engine: string;
+}
+
 export interface AppConfig {
   text_model: ModelConfig;
   transcribe_model: ModelConfig;
@@ -35,6 +41,7 @@ export interface AppConfig {
   ai_name: string;
   user_name: string;
   email: EmailConfig;
+  google_search: GoogleSearchConfig;
   browser_profile_path: string;
   enable_clipboard_helper: boolean;
   enable_file_watcher: boolean;
@@ -56,6 +63,12 @@ export interface Message {
   model?: string;
   timestamp: string;
   attachments?: Attachment[];
+  tokens_used?: number;
+}
+
+export interface SearchStats {
+  date: string;
+  count: number;
 }
 
 interface ChatStore {
@@ -72,6 +85,8 @@ interface ChatStore {
   updateConfig: (newConfig: AppConfig) => Promise<void>;
   clearChat: () => Promise<void>;
   refreshConfig: () => Promise<void>;
+  searchStats: SearchStats;
+  incrementSearchCount: () => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -90,7 +105,43 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   clearLogs: () => set({ logs: [] }),
 
+  searchStats: {
+    date: new Date().toLocaleDateString(),
+    count: 0,
+  },
+
+  incrementSearchCount: () => {
+    const today = new Date().toLocaleDateString();
+    set((state) => {
+      const current = state.searchStats;
+      const newStats = current.date === today 
+        ? { date: today, count: current.count + 1 }
+        : { date: today, count: 1 };
+      localStorage.setItem("echo_ai_search_stats", JSON.stringify(newStats));
+      return { searchStats: newStats };
+    });
+  },
+
   refreshConfig: async () => {
+    // Load search stats
+    const today = new Date().toLocaleDateString();
+    const statsSaved = localStorage.getItem("echo_ai_search_stats");
+    if (statsSaved) {
+      try {
+        const parsedStats = JSON.parse(statsSaved);
+        if (parsedStats.date === today) {
+          set({ searchStats: parsedStats });
+        } else {
+          const resetStats = { date: today, count: 0 };
+          set({ searchStats: resetStats });
+          localStorage.setItem("echo_ai_search_stats", JSON.stringify(resetStats));
+        }
+      } catch (_) {}
+    } else {
+      const resetStats = { date: today, count: 0 };
+      set({ searchStats: resetStats });
+      localStorage.setItem("echo_ai_search_stats", JSON.stringify(resetStats));
+    }
     try {
       const saved = localStorage.getItem("echo_ai_config");
       if (saved) {
@@ -149,6 +200,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           parsed.accent_color = "#00f0ff";
           dirty = true;
         }
+        if (parsed.google_search === undefined) {
+          parsed.google_search = {
+            api_key: "",
+            cse_id: "",
+            engine: "duckduckgo",
+          };
+          dirty = true;
+        } else if (parsed.google_search.engine === undefined) {
+          parsed.google_search.engine = "duckduckgo";
+          dirty = true;
+        }
         if (parsed.schedule === undefined) {
           parsed.schedule = [
             {
@@ -192,7 +254,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         }
 
         // Self-heal: If prompt is outdated, reload the new default from config.rs
-        if (!parsed.system_prompt.includes("Never make up or hallucinate") || !parsed.system_prompt.includes("Full Stack developer from Bangladesh")) {
+        if (!parsed.system_prompt.includes("google_search") || !parsed.system_prompt.includes("Never make up or hallucinate") || !parsed.system_prompt.includes("Full Stack developer from Bangladesh")) {
           localStorage.removeItem("echo_ai_config");
           const cfg = await invoke<AppConfig>("get_config");
           set({ config: cfg });
@@ -260,15 +322,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     get().addLog(`User submitted prompt: "${prompt}"${attachments?.length ? ` with ${attachments.length} attachments` : ""}`);
 
     try {
-      const result = await invoke<string>("send_prompt", { prompt, attachments: attachments || null });
+      interface OrchestratorResult {
+        content: string;
+        tokens_used: number;
+      }
+      const result = await invoke<OrchestratorResult>("send_prompt", { prompt, attachments: attachments || null });
       if (!get().loading) return; // Ignore response if user aborted prompt execution
 
       const assistantMsg: Message = {
         id: Math.random().toString(36).substring(7),
         role: "assistant",
-        content: result,
+        content: result.content,
         model: config.text_model.model_name,
         timestamp: new Date().toLocaleTimeString(),
+        tokens_used: result.tokens_used,
       };
       set((state) => ({
         messages: [...state.messages, assistantMsg],
@@ -315,4 +382,8 @@ useChatStore.getState().refreshConfig();
 
 listen<string>("sidecar-log", (event) => {
   useChatStore.getState().addLog(event.payload);
+});
+
+listen("google-search-performed", () => {
+  useChatStore.getState().incrementSearchCount();
 });

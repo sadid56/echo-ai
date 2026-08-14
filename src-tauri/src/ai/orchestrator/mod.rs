@@ -16,13 +16,19 @@ pub struct Orchestrator;
 
 use crate::ai::providers::Attachment;
 
+#[derive(serde::Serialize)]
+pub struct OrchestratorResult {
+    pub content: String,
+    pub tokens_used: u32,
+}
+
 impl Orchestrator {
     pub async fn process_prompt(
         app: AppHandle,
         state: &AppState,
         prompt: &str,
         attachments: Option<Vec<Attachment>>,
-    ) -> Result<String, String> {
+    ) -> Result<OrchestratorResult, String> {
         let (config, mut system_prompt) = {
             let conf = state.config.lock().unwrap();
             (conf.clone(), conf.system_prompt.clone())
@@ -53,6 +59,14 @@ impl Orchestrator {
             system_prompt.push_str(emoji_rule);
         }
 
+        let engine_name = if config.google_search.engine == "serper" {
+            "Google Search (via Serper.dev)"
+        } else {
+            "DuckDuckGo"
+        };
+        let active_engine_rule = format!("\n\nYour background web search tool ('google_search') is currently configured to query the {} search engine. When asked what search engine you are currently using, you MUST declare that you are using {}.", engine_name, engine_name);
+        system_prompt.push_str(&active_engine_rule);
+
         {
             let mut mem = state.memory.lock().unwrap();
             if mem.get_messages().is_empty() {
@@ -65,6 +79,7 @@ impl Orchestrator {
 
         let mut current_prompt = prompt.to_string();
         let mut loop_count = 0;
+        let mut total_tokens_used: u32 = 0;
         const MAX_LOOPS: usize = 5;
 
         let mut last_tool_call_signature: Option<(String, String)> = None;
@@ -112,6 +127,10 @@ impl Orchestrator {
                 config.text_model.max_tokens,
                 initial_attachments,
             ).await?;
+
+            if let Some(toks) = response.total_tokens {
+                total_tokens_used += toks;
+            }
 
             if let Some(ref tcs) = response.tool_calls {
                 if let Some(first_tc) = tcs.first() {
@@ -196,7 +215,10 @@ impl Orchestrator {
                 continue;
             }
 
-            return Ok(response.content.unwrap_or_else(|| "No text response generated.".to_string()));
+            return Ok(OrchestratorResult {
+                content: response.content.unwrap_or_else(|| "No text response generated.".to_string()),
+                tokens_used: total_tokens_used,
+            });
         }
     }
 }

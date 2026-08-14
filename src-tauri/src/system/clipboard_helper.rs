@@ -58,7 +58,7 @@ pub fn start_clipboard_helper(app: AppHandle) {
                         match Orchestrator::process_prompt(app_clone.clone(), &state, &prompt, None).await {
                             Ok(res) => {
                                 // Extract code blocks or just copy response back
-                                let clean_solution = extract_code_or_full_text(&res);
+                                let clean_solution = extract_code_or_full_text(&res.content);
                                 if let Ok(mut ctx) = Clipboard::new() {
                                     let _ = ctx.set_text(clean_solution);
                                     let _ = app_clone.emit("sidecar-log", "[Clipboard Helper] Solution successfully copied back to clipboard.");

@@ -1,5 +1,5 @@
 use crate::ai::providers::ToolDefinition;
-use crate::system::{file_system, terminal, clipboard, notification, git};
+use crate::system::{file_system, terminal, clipboard, notification, git, google_search};
 use crate::sidecar::process_manager;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
@@ -189,6 +189,39 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
                 "required": ["action"]
             }),
         },
+        ToolDefinition {
+            name: "google_search".to_string(),
+            description: "Search the web in the background to retrieve links, page titles, and snippets. Returns a list of search results.".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query to send to the search engine (e.g. 'react developer jobs in bangladesh')"
+                    }
+                },
+                "required": ["query"]
+            }),
+        },
+        ToolDefinition {
+            name: "control_spotify".to_string(),
+            description: "Control Spotify media player on Linux: open, play, pause, go to next/previous track, or search and play music.".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "description": "The control action to perform: 'open', 'play', 'pause', 'next', 'prev', or 'search'",
+                        "enum": ["open", "play", "pause", "next", "prev", "search"]
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "The search query (e.g. song name, artist, playlist) - required ONLY when action is 'search'"
+                    }
+                },
+                "required": ["action"]
+            }),
+        },
     ]
 }
 
@@ -272,6 +305,30 @@ pub async fn execute_tool(
             let commit_message = args_val["commit_message"].as_str();
             let target = args_val["target"].as_str();
             git::run_git_action(action, commit_message, target).await
+        }
+        "google_search" => {
+            let query = args_val["query"].as_str().ok_or("Missing 'query' argument")?;
+            let state = app.state::<AppState>();
+            let (api_key, cse_id, engine) = {
+                let conf = state.config.lock().unwrap();
+                (conf.google_search.api_key.clone(), conf.google_search.cse_id.clone(), conf.google_search.engine.clone())
+            };
+            
+            let result = if engine == "duckduckgo" {
+                process_manager::run_ddg_search(app.clone(), query).await
+            } else {
+                google_search::search(&api_key, &cse_id, query).await
+            };
+
+            if result.is_ok() {
+                let _ = app.emit("google-search-performed", ());
+            }
+            result
+        }
+        "control_spotify" => {
+            let action = args_val["action"].as_str().ok_or("Missing 'action' argument")?;
+            let query = args_val["query"].as_str();
+            crate::system::spotify::control_spotify(app.clone(), action, query).await
         }
         _ => Err(format!("Unknown tool: {}", name)),
     }
