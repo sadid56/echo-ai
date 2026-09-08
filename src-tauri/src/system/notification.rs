@@ -1,3 +1,4 @@
+#[cfg(not(target_os = "android"))]
 use std::process::Command;
 
 pub fn send_notification(title: &str, body: &str) -> Result<(), String> {

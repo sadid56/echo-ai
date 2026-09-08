@@ -1,10 +1,16 @@
+#[cfg(not(target_os = "android"))]
 use std::time::Duration;
 #[cfg(not(target_os = "android"))]
 use arboard::Clipboard;
+#[cfg(not(target_os = "android"))]
 use tauri::{AppHandle, Emitter, Manager};
+#[cfg(not(target_os = "android"))]
 use crate::ai::orchestrator::{AppState, Orchestrator};
+#[cfg(not(target_os = "android"))]
 use crate::system::notification;
 
+#[cfg(target_os = "android")]
+use tauri::AppHandle;
 pub fn start_clipboard_helper(app: AppHandle) {
     #[cfg(target_os = "android")]
     {
@@ -86,6 +92,7 @@ pub fn start_clipboard_helper(app: AppHandle) {
     });
 }
 
+#[cfg(not(target_os = "android"))]
 fn detect_error_pattern(text: &str) -> bool {
     let lowercase = text.to_lowercase();
     
@@ -123,6 +130,7 @@ fn detect_error_pattern(text: &str) -> bool {
     false
 }
 
+#[cfg(not(target_os = "android"))]
 fn extract_code_or_full_text(text: &str) -> String {
     if let Some(start_idx) = text.find("```") {
         let after_ticks = &text[start_idx + 3..];
