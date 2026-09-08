@@ -1,6 +1,7 @@
 import { UseFormRegister } from "react-hook-form";
 import { TextField } from "../../components/ui/textField";
 import { SectionHeader } from "../../components/ui/SectionHeader";
+import { Card } from "../../components/ui/Card";
 
 interface EmailSettingsProps {
   register: UseFormRegister<any>;
@@ -12,7 +13,7 @@ export function EmailSettings({ register }: EmailSettingsProps) {
       <div className='space-y-4'>
         <SectionHeader>Email Configuration</SectionHeader>
         
-        <div className='space-y-6'>
+        <Card className='space-y-6 shadow-sm'>
           <TextField name='imapServer' label='IMAP Mail Server' placeholder='imap.gmail.com' register={register} />
           
           <div className='grid gap-6 sm:grid-cols-2'>
@@ -25,7 +26,7 @@ export function EmailSettings({ register }: EmailSettingsProps) {
               register={register}
             />
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

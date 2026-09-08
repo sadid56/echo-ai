@@ -82,40 +82,41 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
         <SectionHeader>Scheduled Tasks & Cron Setup</SectionHeader>
 
         {scheduleList.length === 0 ? (
-          <p className='text-xs text-text-muted italic bg-bg-secondary/40 p-4.5 rounded-2xl border border-border-color/20'>
+          <p className='text-xs text-m3-on-surface-variant/70 italic bg-m3-surface-container/40 p-4 rounded-2xl border border-m3-outline-variant/40'>
             No scheduled routine tasks configured. Add one below!
           </p>
         ) : (
           <div className='space-y-3.5'>
             {scheduleList.map((task, idx) => (
-              <div
+              <Card
                 key={idx}
-                className='flex items-center justify-between bg-bg-secondary/60 p-4.5 rounded-2xl border border-border-color/30 shadow-sm transition-all duration-200'
+                className='flex items-center justify-between p-4 sm:p-4.5 space-y-0 shadow-sm'
               >
                 <div>
                   <div className='flex items-center gap-2.5'>
-                    <span className='text-xs font-bold text-accent-cyan'>{task.name}</span>
-                    <span className='text-[10px] bg-bg-primary border border-border-color/60 px-2.5 py-0.5 rounded-lg text-text-muted font-mono'>
+                    <span className='text-xs font-bold text-m3-primary'>{task.name}</span>
+                    <span className='text-[10px] bg-m3-surface-container border border-m3-outline-variant px-2.5 py-0.5 rounded-full text-m3-on-surface-variant font-mono'>
                       {formatTaskScheduleLabel(task)}
                     </span>
                   </div>
-                  <p className='mt-1 text-xs text-text-muted line-clamp-1'>{task.prompt}</p>
+                  <p className='mt-1 text-xs text-m3-on-surface-variant line-clamp-1'>{task.prompt}</p>
                 </div>
-                <button
-                  type='button'
+                <Button
+                  variant='error'
+                  size='sm'
                   onClick={() => handleRemoveTask(idx)}
-                  className='p-1.5 px-3 rounded-xl hover:bg-accent-red/10 text-accent-red hover:text-accent-red transition-all text-xs font-semibold cursor-pointer shrink-0'
+                  className='shrink-0'
                 >
                   Remove
-                </button>
-              </div>
+                </Button>
+              </Card>
             ))}
           </div>
         )}
 
-        <Card className='mt-6 space-y-6'>
+        <Card className='mt-6 space-y-6 shadow-sm border border-m3-outline-variant/60'>
           <div>
-            <h4 className='text-[13px] font-bold uppercase tracking-wider text-text-muted'>Add New Scheduled Task</h4>
+            <h4 className='text-xs font-semibold text-m3-on-surface'>Add New Scheduled Task</h4>
           </div>
 
           <div className='grid gap-6 sm:grid-cols-2'>
@@ -129,7 +130,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
           </div>
 
           <div
-            className={`grid gap-6 ${newTaskFrequency === "weekly" || newTaskFrequency === "monthly" ? "sm:grid-cols-3" : "sm:grid-cols-2"} bg-bg-primary/20 rounded-xl border border-border-color/10`}
+            className={`grid gap-6 ${newTaskFrequency === "weekly" || newTaskFrequency === "monthly" ? "sm:grid-cols-3" : "sm:grid-cols-2"} bg-m3-surface-container/30 rounded-xl border border-m3-outline-variant/30`}
           >
             {newTaskFrequency === "interval" ? (
               <div className='sm:col-span-3'>

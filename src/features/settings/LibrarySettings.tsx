@@ -79,50 +79,50 @@ export function LibrarySettings({ setValue }: LibrarySettingsProps) {
     <div className="space-y-6 animate-fadeIn">
       <div className="space-y-4">
         <SectionHeader>Configuration Library</SectionHeader>
-        <p className="text-xs text-text-muted">
+        <p className="text-xs text-m3-on-surface-variant">
           Save custom AI providers or credentials setup to quickly reload them later.
         </p>
 
         {presets.length === 0 ? (
-          <p className="text-xs text-text-muted italic bg-bg-secondary/40 p-4.5 rounded-2xl border border-border-color/20">
+          <p className="text-xs text-m3-on-surface-variant/70 italic bg-m3-surface-container/40 p-4 rounded-2xl border border-m3-outline-variant/40">
             No saved presets in your library. Add one below!
           </p>
         ) : (
           <div className="space-y-3.5">
             {presets.map((preset) => (
-              <div
+              <Card
                 key={preset.id}
-                className="flex items-center justify-between bg-bg-secondary/60 p-4.5 rounded-2xl border border-border-color/30 shadow-sm transition-all duration-200"
+                className="flex items-center justify-between p-4 sm:p-4.5 space-y-0 shadow-sm"
               >
                 <div>
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold text-accent-cyan">{preset.name}</span>
-                    <span className="text-[10px] bg-bg-primary border border-border-color/60 px-2.5 py-0.5 rounded-lg text-text-muted font-mono">
+                    <span className="text-xs font-bold text-m3-primary">{preset.name}</span>
+                    <span className="text-[10px] bg-m3-surface-container border border-m3-outline-variant px-2.5 py-0.5 rounded-full text-m3-on-surface-variant font-mono">
                       {preset.provider_name} - {preset.model_name}
                     </span>
                   </div>
-                  <p className="mt-1 text-[10px] text-text-muted truncate max-w-md">{preset.api_endpoint}</p>
+                  <p className="mt-1 text-[10px] text-m3-on-surface-variant truncate max-w-md">{preset.api_endpoint}</p>
                 </div>
                 <div className="flex items-center gap-2 pl-4 shrink-0">
                   <Button variant="secondary" size="sm" onClick={() => loadPreset(preset)}>
                     Load
                   </Button>
-                  <button
-                    type="button"
+                  <Button
+                    variant="error"
+                    size="sm"
                     onClick={() => deletePreset(preset.id)}
-                    className="p-1.5 px-3 rounded-xl hover:bg-accent-red/10 text-accent-red hover:text-accent-red transition-all text-xs font-semibold cursor-pointer"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
 
-        <Card className="mt-6 space-y-6">
+        <Card className="mt-6 space-y-6 shadow-sm border border-m3-outline-variant/60">
           <div>
-            <h4 className="text-[13px] font-bold uppercase tracking-wider text-text-muted">
+            <h4 className="text-xs font-semibold text-m3-on-surface">
               Save Current/New Configuration Setup
             </h4>
           </div>

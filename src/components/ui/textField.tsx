@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { UseFormRegister, FieldValues, Path } from "react-hook-form";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { Button } from "./button";
 
 interface TextFieldProps<TFieldValues extends FieldValues = Record<string, any>> {
   name?: Path<TFieldValues>;
@@ -60,24 +61,24 @@ export function TextField<TFieldValues extends FieldValues = Record<string, any>
   };
 
   const baseInputClasses = `
-    peer w-full h-[42px] rounded-lg border border-border-color bg-white/[0.04] px-3.5 text-xs text-text-main 
+    peer w-full rounded-[16px] border border-m3-outline-variant bg-m3-surface-container-low px-4 text-xs sm:text-sm text-m3-on-surface 
     outline-none placeholder-transparent
     transition-all duration-150 ease-[cubic-bezier(0.2,0,0,1)]
-    hover:border-text-muted/50
-    focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan/30
+    hover:border-m3-outline
+    focus:border-m3-primary focus:ring-1 focus:ring-m3-primary/30
   `;
 
   const labelClasses = `
-    absolute left-3.5 top-[13px] pointer-events-none select-none px-1 bg-transparent
-    text-xs text-text-muted/60 origin-[0_0]
+    absolute left-3.5 top-[14px] pointer-events-none select-none px-1.5 bg-transparent
+    text-xs text-m3-on-surface-variant origin-[0_0]
     will-change-transform
     transition-all duration-150 ease-[cubic-bezier(0.2,0,0,1)]
     
     /* Float label up when input is focused */
-    peer-focus:-translate-y-[21px] peer-focus:scale-[0.82] peer-focus:text-accent-cyan peer-focus:bg-bg-primary
+    peer-focus:-translate-y-[22px] peer-focus:scale-[0.85] peer-focus:text-m3-primary peer-focus:bg-m3-surface-container-low peer-focus:rounded-sm
     
     /* Float label up when input has content */
-    peer-[:not(:placeholder-shown)]:-translate-y-[21px] peer-[:not(:placeholder-shown)]:scale-[0.82] peer-[:not(:placeholder-shown)]:text-text-muted peer-[:not(:placeholder-shown)]:bg-bg-primary
+    peer-[:not(:placeholder-shown)]:-translate-y-[22px] peer-[:not(:placeholder-shown)]:scale-[0.85] peer-[:not(:placeholder-shown)]:text-m3-on-surface-variant peer-[:not(:placeholder-shown)]:bg-m3-surface-container-low peer-[:not(:placeholder-shown)]:rounded-sm
   `;
 
   const commonProps = {
@@ -94,7 +95,11 @@ export function TextField<TFieldValues extends FieldValues = Record<string, any>
     <div className={`relative flex flex-col w-full ${className}`}>
       {textarea ? (
         <>
-          <textarea {...commonProps} rows={rows ?? 4} className={`${baseInputClasses} resize-none`} />
+          <textarea 
+            {...commonProps} 
+            rows={rows ?? 3} 
+            className={`${baseInputClasses} min-h-[96px] py-3.5 resize-y`} 
+          />
           {label && <label className={labelClasses}>{label}</label>}
         </>
       ) : (
@@ -105,27 +110,27 @@ export function TextField<TFieldValues extends FieldValues = Record<string, any>
             type={type}
             min={min}
             max={max}
-            className={`${baseInputClasses} ${type === "number" ? "pr-10" : ""}`}
+            className={`${baseInputClasses} h-[46px] ${type === "number" ? "pr-10" : ""}`}
           />
 
           {type === "number" && (
             <div className='absolute right-2.5 flex flex-col gap-0.5 select-none z-10'>
-              <button
-                type='button'
+              <Button
+                variant='ghost'
                 onClick={handleIncrement}
-                className='p-0.5 rounded hover:bg-white/[0.06] active:bg-white/[0.12] text-text-muted hover:text-white transition-colors cursor-pointer outline-none'
+                className='p-0.5 w-5 h-4.5 rounded hover:bg-white/[0.06] active:bg-white/[0.12] text-text-muted hover:text-white transition-colors cursor-pointer outline-none'
                 title='Increment'
               >
                 <ChevronUp className='h-3.5 w-3.5' />
-              </button>
-              <button
-                type='button'
+              </Button>
+              <Button
+                variant='ghost'
                 onClick={handleDecrement}
-                className='p-0.5 rounded hover:bg-white/[0.06] active:bg-white/[0.12] text-text-muted hover:text-white transition-colors cursor-pointer outline-none'
+                className='p-0.5 w-5 h-4.5 rounded hover:bg-white/[0.06] active:bg-white/[0.12] text-text-muted hover:text-white transition-colors cursor-pointer outline-none'
                 title='Decrement'
               >
                 <ChevronDown className='h-3.5 w-3.5' />
-              </button>
+              </Button>
             </div>
           )}
 

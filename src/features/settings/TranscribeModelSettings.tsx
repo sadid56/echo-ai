@@ -3,6 +3,7 @@ import { TextField } from "../../components/ui/textField";
 import { Dropdown } from "../../components/ui/dropdown";
 import { transcribePresetOptions, transcribeModelPresets } from "../../config/model";
 import { SectionHeader } from "../../components/ui/SectionHeader";
+import { Card } from "../../components/ui/Card";
 
 interface TranscribeModelSettingsProps {
   register: UseFormRegister<any>;
@@ -25,7 +26,7 @@ export function TranscribeModelSettings({ register, setValue }: TranscribeModelS
       <div className='space-y-4'>
         <SectionHeader>Audio Transcription Model Setup</SectionHeader>
         
-        <div className='space-y-6'>
+        <Card className='space-y-6 shadow-sm'>
           <Dropdown value='' onChange={handlePresetSelect} options={transcribePresetOptions} />
           <TextField name='transcribe_provider_name' label='Provider Name' placeholder='e.g., OpenAI, Gemini' register={register} />
           <TextField
@@ -54,7 +55,7 @@ export function TranscribeModelSettings({ register, setValue }: TranscribeModelS
             placeholder='Leave blank unless provider requires it'
             register={register}
           />
-        </div>
+        </Card>
       </div>
     </div>
   );

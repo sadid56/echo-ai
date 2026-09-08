@@ -3,24 +3,73 @@
 @import "./animations.css";
 
 @theme {
-  --color-bg-primary: #0a0a0c;
-  --color-bg-secondary: #121217;
-  --color-bg-tertiary: #191a22;
-  --color-bg-glass: rgba(18, 18, 23, 0.7);
-  --color-border-color: rgba(255, 255, 255, 0.07);
-  --color-border-glow: rgba(0, 255, 210, 0.2);
-  --color-accent-cyan: var(--accent-color-hex, #00f0ff);
-  --color-accent-purple: #c77dff;
-  --color-accent-blue: #3b82f6;
-  --color-accent-green: #10b981;
-  --color-accent-orange: #f59e0b;
-  --color-accent-red: #ef4444;
-  --color-text-main: #f3f4f6;
-  --color-text-muted: #9ca3af;
+  /* Material You 3 Color Tokens (Dark Palette) */
+  --color-m3-surface: #111215;
+  --color-m3-surface-dim: #0c0d0f;
+  --color-m3-surface-container-lowest: #08090a;
+  --color-m3-surface-container-low: #16171b;
+  --color-m3-surface-container: #1c1d22;
+  --color-m3-surface-container-high: #23252a;
+  --color-m3-surface-container-highest: #2a2c33;
+  --color-m3-on-surface: #e2e2e6;
+  --color-m3-on-surface-variant: #8e919d;
+  --color-m3-outline: rgba(255, 255, 255, 0.12);
+  --color-m3-outline-variant: rgba(255, 255, 255, 0.06);
 
-  --font-sans: "Geist Sans", "Inter", sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", monospace;
+  --color-m3-primary: var(--accent-color-hex, #5eead4);
+  --color-m3-on-primary: #003731;
+  --color-m3-primary-container: rgba(94, 234, 212, 0.14);
+  --color-m3-on-primary-container: #a7f3d0;
+
+  --color-m3-secondary-container: #252830;
+  --color-m3-on-secondary-container: #d0d3de;
+
+  --color-m3-error: #ffb4ab;
+  --color-m3-on-error: #690005;
+
+  /* Backward Compatible Aliases mapped to M3 */
+  --color-bg-primary: #111215;
+  --color-bg-secondary: #16171b;
+  --color-bg-tertiary: #1c1d22;
+  --color-bg-glass: rgba(22, 23, 27, 0.9);
+  --color-border-color: rgba(255, 255, 255, 0.08);
+  --color-border-glow: rgba(94, 234, 212, 0.12);
+  --color-accent-cyan: var(--accent-color-hex, #5eead4);
+  --color-accent-purple: #c084fc;
+  --color-accent-blue: #60a5fa;
+  --color-accent-green: #34d399;
+  --color-accent-orange: #fbbf24;
+  --color-accent-red: #f87171;
+  --color-text-main: #e2e2e6;
+  --color-text-muted: #8e919d;
+
+  --font-sans: "Outfit", "Geist Sans", "Inter", -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", monospace;
 } 
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+.is-android {
+  --safe-top: max(env(safe-area-inset-top, 0px), 32px);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+}
+
+.pt-safe {
+  padding-top: var(--safe-top);
+}
+
+.pb-safe {
+  padding-bottom: var(--safe-bottom);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
 
 html,
 body,
@@ -35,6 +84,8 @@ body {
   font-family: var(--font-sans);
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
 }
 
 ::-webkit-scrollbar {

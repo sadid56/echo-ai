@@ -24,31 +24,32 @@ export function Dialog({ open, onClose, title, description, children, className 
     };
   }, [open]);
 
-  if (!open) return null;
+  const portalTarget = typeof document !== "undefined" ? document.getElementById("app-container") || document.body : null;
+  if (!portalTarget) return null;
 
   return createPortal(
-    <div className='fixed inset-0 z-55'>
-      <div className='fixed inset-0 bg-black/60 backdrop-blur-md animate-dialog-fade-in' onClick={onClose} />
+    <div className='absolute inset-0 z-55'>
+      <div className='absolute inset-0 bg-black/60 backdrop-blur-md animate-dialog-fade-in' onClick={onClose} />
 
-      <div className='fixed inset-0 flex items-center justify-center p-4 pointer-events-none'>
+      <div className='absolute inset-0 flex items-center justify-center p-4 pointer-events-none'>
         <div
           className={cn(
-            "w-full max-w-md rounded-xl border border-border-color bg-bg-secondary p-5 shadow-2xl focus:outline-none pointer-events-auto animate-dialog-scale-in",
+            "w-full max-w-md rounded-[28px] border border-m3-outline-variant bg-m3-surface-container-high p-6 shadow-2xl focus:outline-none pointer-events-auto animate-dialog-scale-in",
             className,
           )}
         >
           {/* Header */}
-          <div className='border-b border-border-color/30 pb-3 mb-4 select-none'>
-            <h3 className='text-xl font-medium text-accent-cyan'>{title}</h3>
-            {description && <p className='text-[10px] text-text-muted mt-0.5'>{description}</p>}
+          <div className='pb-2 mb-3 select-none'>
+            <h3 className='text-xl font-normal text-m3-on-surface'>{title}</h3>
+            {description && <p className='text-xs text-m3-on-surface-variant mt-1'>{description}</p>}
           </div>
 
           {/* Content */}
-          <div className='text-xs text-text-main leading-relaxed mb-5'>{children}</div>
+          <div className='text-xs sm:text-sm text-m3-on-surface leading-relaxed mb-5'>{children}</div>
         </div>
       </div>
     </div>,
-    document.body,
+    portalTarget,
   );
 }
 
@@ -77,11 +78,11 @@ export function AlertDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title={title} className='max-w-sm'>
-      <p className='text-xs text-text-muted'>{description}</p>
+      <p className='text-xs sm:text-sm text-m3-on-surface-variant leading-relaxed'>{description}</p>
 
       {/* Action buttons */}
-      <div className='flex justify-end gap-2.5 mt-5'>
-        <Button variant='secondary' size='sm' onClick={onClose}>
+      <div className='flex justify-end gap-2 mt-6'>
+        <Button variant='ghost' size='sm' onClick={onClose}>
           {cancelLabel}
         </Button>
         <Button

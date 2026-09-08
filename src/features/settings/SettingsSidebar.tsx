@@ -1,16 +1,17 @@
 import React from "react";
-import { Sparkles, Mic, Mail, Zap, Clock, ChevronLeft, Library, Globe, Send, User } from "lucide-react";
+import { Sparkles, Mic, Mail, Zap, Clock, Library, Globe, Send, User } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { Button } from "../../components/ui/button";
 
 export type SettingsTab = "textModel" | "transcribeModel" | "email" | "googleSearch" | "personalization" | "schedule" | "library" | "telegram" | "telegramUser";
 
-interface SidebarItem {
+export interface SidebarItem {
   id: SettingsTab;
   label: string;
   icon: React.ComponentType<any>;
 }
 
-const sidebarItems: SidebarItem[] = [
+export const sidebarItems: SidebarItem[] = [
   { id: "textModel", label: "Text Generation", icon: Sparkles },
   { id: "transcribeModel", label: "Transcription", icon: Mic },
   { id: "email", label: "Email Integration", icon: Mail },
@@ -25,60 +26,34 @@ const sidebarItems: SidebarItem[] = [
 interface SettingsSidebarProps {
   activeTab: SettingsTab;
   onTabChange: (tab: SettingsTab) => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
-export function SettingsSidebar({ activeTab, onTabChange, onBack }: SettingsSidebarProps) {
+export function SettingsSidebar({ activeTab, onTabChange }: SettingsSidebarProps) {
   return (
-    <aside className='w-64 border-r border-border-color bg-bg-secondary flex flex-col h-full select-none shrink-0'>
-      {/* Sidebar Header */}
-      <div className='px-4 py-3.5 border-b border-border-color/20 flex items-center gap-3'>
-        <button
-          type='button'
-          onClick={onBack}
-          className='p-2 rounded-full hover:bg-bg-tertiary text-text-muted hover:text-text-main transition-colors duration-200 active:bg-bg-tertiary/80 cursor-pointer'
-          title='Back to chat'
-        >
-          <ChevronLeft className='h-5 w-5' />
-        </button>
-        <div>
-          <h2 className='text-base font-medium tracking-tight text-text-main -mt-0.5'>Control Center</h2>
-        </div>
-      </div>
-
+    <aside className='hidden md:flex w-56 lg:w-60 border-r border-m3-outline-variant bg-m3-surface-container-low flex-col h-full select-none shrink-0'>
       {/* Navigation list */}
-      <nav className='flex-1 overflow-y-auto px-3 py-4 space-y-1.5 scrollbar-none'>
+      <nav className='flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-none'>
         {sidebarItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
 
           return (
-            <button
+            <Button
               key={item.id}
-              type='button'
+              variant={isActive ? "secondary" : "ghost"}
+              fullWidth
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-full text-left transition-all duration-200 outline-none cursor-pointer group",
+                "justify-start gap-3 px-3.5 py-2.5 h-10 rounded-full text-left font-normal transition-all",
                 isActive
-                  ? "bg-accent-cyan/15 text-accent-cyan font-medium shadow-xs"
-                  : "bg-transparent text-text-muted hover:bg-bg-tertiary/60 hover:text-text-main",
+                  ? "bg-m3-primary/15 text-m3-primary font-semibold shadow-none border-none"
+                  : "text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-white/[0.04]"
               )}
             >
-              <div
-                className={cn(
-                  "p-2 rounded-xl transition-colors duration-200 shrink-0",
-                  isActive
-                    ? "bg-accent-cyan/20 text-accent-cyan"
-                    : "bg-bg-tertiary/40 text-text-muted group-hover:bg-bg-tertiary group-hover:text-text-main",
-                )}
-              >
-                <Icon className='h-4 w-4' />
-              </div>
-
-              <span className={cn("text-xs tracking-wide truncate", isActive ? "font-bold text-accent-cyan" : "font-medium")}>
-                {item.label}
-              </span>
-            </button>
+              <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-m3-primary" : "text-m3-on-surface-variant")} />
+              <span className="text-xs truncate">{item.label}</span>
+            </Button>
           );
         })}
       </nav>

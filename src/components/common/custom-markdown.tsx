@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Check, Copy } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface CustomMarkdownProps {
   content: string;
@@ -22,14 +23,16 @@ const CodeBlock = ({ language, value }: { language: string; value: string }) => 
     <div className='relative my-6 overflow-hidden rounded-xl bg-[#0d1117] border border-white/10 shadow-2xl'>
       <div className='flex items-center justify-between px-4 py-2 bg-white/[0.04] border-b border-white/5'>
         <span className='text-[11px] font-mono uppercase tracking-widest text-white/50'>{language || "text"}</span>
-        <button
+        <Button
+          variant='ghost'
+          size='sm'
           onClick={handleCopy}
-          className='flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/10 text-white/50 hover:text-white transition-colors cursor-pointer'
+          className='h-7 px-2.5 py-1 text-white/50 hover:text-white transition-colors cursor-pointer gap-1.5'
           title='Copy code'
         >
           {copied ? <Check className='h-3.5 w-3.5 text-accent-cyan' /> : <Copy className='h-3.5 w-3.5' />}
           <span className='text-[10px] font-medium uppercase tracking-wider'>{copied ? "Copied" : "Copy"}</span>
-        </button>
+        </Button>
       </div>
 
       <div className='text-[13px] overflow-x-auto'>

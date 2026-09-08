@@ -67,11 +67,51 @@ impl Orchestrator {
         let active_engine_rule = format!("\n\nYour background web search tool ('google_search') is currently configured to query the {} search engine. When asked what search engine you are currently using, you MUST declare that you are using {}.", engine_name, engine_name);
         system_prompt.push_str(&active_engine_rule);
 
+        // Detect host OS and environment dynamically
+        let os_details = match std::env::consts::OS {
+            "macos" => {
+                let ver = std::process::Command::new("sw_vers")
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().replace('\n', ", "))
+                    .unwrap_or_else(|_| "Apple macOS".to_string());
+                format!("Apple macOS ({})", ver)
+            },
+            "linux" => {
+                let ver = std::fs::read_to_string("/etc/os-release")
+                    .map(|s| s.lines().find(|l| l.starts_with("PRETTY_NAME=")).map(|l| l.replace("PRETTY_NAME=", "").replace('\"', "")).unwrap_or_default())
+                    .unwrap_or_else(|_| "Linux".to_string());
+                format!("Linux ({})", ver)
+            },
+            "windows" => "Microsoft Windows".to_string(),
+            other => other.to_string(),
+        };
+        let os_arch = std::env::consts::ARCH;
+        let current_user = std::env::var("USER").or_else(|_| std::env::var("USERNAME")).unwrap_or_else(|_| "user".to_string());
+        let home_dir = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| "~".to_string());
+        let current_dir = std::env::current_dir().map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|_| ".".to_string());
+
+        let system_access_rule = format!(
+            "\n\n=== NATIVE OPERATING SYSTEM & ENVIRONMENT ACCESS ===\n\
+            You are Echo, running natively as a desktop AI application directly on the user's computer with full system privileges.\n\
+            - Host Operating System: {}\n\
+            - Architecture: {}\n\
+            - Current User: {}\n\
+            - User Home Directory: {}\n\
+            - Current Working Directory: {}\n\
+            \n\
+            CRITICAL OPERATING SYSTEM RULES:\n\
+            1. NEVER EVER say \"I don't have access to your local machine\", \"I can't check your OS\", \"I cannot see your files\", or \"Run this command yourself in terminal\". You have full native terminal and file system access right now!\n\
+            2. If the user asks what OS they are using, computer hardware, CPU, RAM, disk space, battery, network, IP, installed apps, or running processes, you ALREADY have the system details above, or you MUST call 'execute_command' (e.g. 'sw_vers', 'uname -a', 'top', 'df -h', 'ps aux', 'whoami', 'cat', etc.) to inspect it and answer directly with the real facts!\n\
+            3. You have unrestricted access to the entire file system on this computer. Use 'list_directory' to list any directory (including home '{}', desktop, downloads, documents, root, or any path), 'read_file' to read any file, and 'write_file' to create or edit files anywhere.\n\
+            4. If the user asks to find, create, delete, move, edit, or check any file, or run any script/command, DO IT DIRECTLY using 'execute_command' or the file tools without hesitation. Never refuse or tell the user to do it manually.\n\
+            5. Always act as an autonomous, proactive OS assistant who can manage the entire system for the user.",
+            os_details, os_arch, current_user, home_dir, current_dir, home_dir
+        );
+        system_prompt.push_str(&system_access_rule);
+
         {
             let mut mem = state.memory.lock().unwrap();
-            if mem.get_messages().is_empty() {
-                mem.set_system_prompt(system_prompt);
-            }
+            mem.set_system_prompt(system_prompt);
         }
 
         let log_msg = format!("[Orchestrator] Starting pipeline with model: {} ({})", config.text_model.model_name, config.text_model.provider_name);

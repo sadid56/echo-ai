@@ -9,13 +9,13 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
     vec![
         ToolDefinition {
             name: "list_directory".to_string(),
-            description: "List the contents of a directory in the workspace".to_string(),
+            description: "List the contents of ANY directory on the user's operating system and file system (e.g. '~', current directory, desktop, documents, projects, or any absolute path)".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "The directory path to list (e.g. '.' or './src')"
+                        "description": "The directory path to list (e.g. '~', '.', '/Users', '~/Downloads', etc.)"
                     }
                 },
                 "required": ["path"]
@@ -23,13 +23,13 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "read_file".to_string(),
-            description: "Read the text content of a file in the workspace".to_string(),
+            description: "Read the text content of ANY file on the user's operating system (e.g. code, configs like ~/.zshrc, logs, documents)".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "The file path to read"
+                        "description": "The absolute or relative file path to read (e.g. '~/.zshrc', './package.json', etc.)"
                     }
                 },
                 "required": ["path"]
@@ -37,17 +37,17 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "write_file".to_string(),
-            description: "Write content to a file in the workspace".to_string(),
+            description: "Write or create content in ANY file on the user's operating system (creates parent directories if needed)".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "The file path to write to"
+                        "description": "The file path to write to (e.g. '~/Desktop/notes.txt', './src/app.ts')"
                     },
                     "content": {
                         "type": "string",
-                        "description": "The contents to write"
+                        "description": "The text contents to write"
                     }
                 },
                 "required": ["path", "content"]
@@ -55,13 +55,13 @@ pub fn get_available_tools() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "execute_command".to_string(),
-            description: "Run a shell command on the local machine".to_string(),
+            description: "Execute any shell command directly on the user's operating system with full terminal privileges (e.g. check OS info via `sw_vers`/`uname -a`, list processes, run scripts, manage packages, check hardware specs, search files, etc.)".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "command": {
                         "type": "string",
-                        "description": "The shell command to execute"
+                        "description": "The shell command to execute directly on the local machine (e.g. 'sw_vers', 'uname -a', 'ls -la', 'ps aux', 'df -h')"
                     }
                 },
                 "required": ["command"]

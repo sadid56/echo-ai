@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useChatStore } from "../../store/chatStore";
+import { Button } from "../../components/ui/button";
 
 // TypeScript declarations for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -547,11 +548,13 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
 
       {/* Control Buttons */}
       <div className="flex gap-6 mt-12">
-        <button
-          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all cursor-pointer border hover:-translate-y-0.5 hover:shadow-lg ${
+        <Button
+          variant={isMuted ? "secondary" : "ghost"}
+          size='icon'
+          className={`w-14 h-14 rounded-full border hover:-translate-y-0.5 hover:shadow-lg ${
             isMuted 
-              ? "bg-accent-orange/20 border-accent-orange/45 text-accent-orange hover:bg-accent-orange/30 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)]" 
-              : "bg-bg-tertiary border-border-color text-text-main hover:bg-white/10"
+              ? "bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30" 
+              : "bg-m3-surface-container border-m3-outline-variant text-m3-on-surface hover:bg-white/10"
           }`}
           onClick={toggleMute}
           title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
@@ -572,10 +575,12 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
               <line x1="8" y1="23" x2="16" y2="23"></line>
             </svg>
           )}
-        </button>
+        </Button>
 
-        <button 
-          className="w-14 h-14 rounded-full flex items-center justify-center bg-accent-red/20 border border-accent-red/45 text-accent-red hover:bg-accent-red/35 hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all cursor-pointer" 
+        <Button 
+          variant='error'
+          size='icon'
+          className="w-14 h-14 rounded-full border border-rose-500/40 text-rose-300 hover:bg-rose-500/25 hover:-translate-y-0.5 transition-all" 
           onClick={onClose} 
           title="Exit Voice Mode"
         >
@@ -583,7 +588,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onClose }) => {
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
-        </button>
+        </Button>
       </div>
     </div>
   );

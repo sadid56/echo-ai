@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
-
 import { useChatStore } from "../../store/chatStore";
+import { Button } from "../../components/ui/button";
 
 type LogsProps = {
   setShowLogs: Dispatch<SetStateAction<boolean>>;
@@ -67,20 +67,21 @@ const HighlightedMessage = ({ text }: { text: string }) => {
   );
 };
 
-const Logs = ({ setShowLogs, recentLogs }: LogsProps) => {
+const Logs = ({ setShowLogs: _setShowLogs, recentLogs }: LogsProps) => {
   const clearLogs = useChatStore((state) => state.clearLogs);
 
   return (
     <aside className='w-full flex-1 flex flex-col border border-border-color/40 bg-[#080c11] rounded-xl overflow-hidden z-20 min-h-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.6)]'>
       <div className='flex items-center justify-between px-3 py-2 border-b border-border-color/40 bg-white/[0.01] select-none'>
         <span className='text-[9px] uppercase tracking-wider text-text-muted font-semibold font-mono'>Terminal Stream</span>
-        <button
-          type='button'
+        <Button
+          variant='error'
+          size='sm'
           onClick={clearLogs}
-          className='text-[9px] font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 px-2 py-1 rounded border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 active:scale-[0.98] transition-all duration-75 cursor-pointer'
+          className='h-6 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider'
         >
           Clear Logs
-        </button>
+        </Button>
       </div>
       <div className='flex-1 overflow-y-auto py-3 px-2 text-[11px] font-mono leading-relaxed min-h-0 custom-scrollbar'>
         <div className='space-y-2'>

@@ -62,19 +62,19 @@ export function Dropdown({
         variant='secondary'
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "w-full flex items-center justify-between text-left rounded-lg px-3.5 py-3 text-xs font-normal normal-case tracking-normal",
+          "w-full flex items-center justify-between text-left rounded-[16px] px-4 py-3 text-xs sm:text-sm font-normal normal-case tracking-normal bg-m3-surface-container-low border border-m3-outline-variant text-m3-on-surface hover:border-m3-outline",
           triggerClassName,
         )}
       >
         <span className='flex flex-col items-start justify-center pointer-events-none overflow-hidden flex-1'>
-          <span className={cn("text-xs truncate w-full", selectedOption ? "text-text-main" : "text-text-muted/70")}>
+          <span className={cn("text-xs sm:text-sm truncate w-full", selectedOption ? "text-m3-on-surface font-medium" : "text-m3-on-surface-variant")}>
             {selectedOption?.label ?? placeholder}
           </span>
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-text-muted transition-transform duration-300 ease-in-out ml-3 shrink-0",
-            open && "rotate-180 text-accent-cyan",
+            "h-4 w-4 text-m3-on-surface-variant transition-transform duration-200 ease-in-out ml-3 shrink-0",
+            open && "rotate-180 text-m3-primary",
           )}
         />
       </Button>
@@ -85,11 +85,11 @@ export function Dropdown({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
               "absolute left-0 right-0 z-50 overflow-hidden",
-              "rounded-xl border border-accent-cyan/20 bg-[#121217] shadow-[0_0_20px_rgba(0,240,255,0.08)]",
-              "backdrop-blur-xl",
+              "rounded-[18px] border border-m3-outline-variant bg-m3-surface-container shadow-xl",
+              "backdrop-blur-md",
               openUpwards ? "bottom-[calc(100%+6px)] origin-bottom" : "top-[calc(100%+6px)] origin-top",
             )}
           >
@@ -98,31 +98,32 @@ export function Dropdown({
                 const isSelected = option.value === value;
 
                 return (
-                  <button
+                  <Button
                     key={option.value}
-                    type='button'
+                    variant={isSelected ? "secondary" : "ghost"}
+                    fullWidth
                     onClick={() => {
                       onChange(option.value);
                       setOpen(false);
                     }}
                     className={cn(
-                      "w-full text-left px-3 py-2.5 flex items-center justify-between border-none outline-none transition-all duration-150 relative cursor-pointer gap-2 rounded-lg my-0.5",
-                      isSelected ? "bg-accent-cyan/10 text-accent-cyan" : "text-text-main hover:bg-white/[0.04] active:bg-white/[0.08]",
+                      "justify-between text-left px-3.5 py-2.5 h-auto rounded-[12px] my-0.5 border-0 font-normal",
+                      isSelected ? "bg-m3-secondary-container text-m3-on-secondary-container font-medium" : "text-m3-on-surface",
                     )}
                   >
                     <div className='flex flex-col items-start overflow-hidden flex-1'>
-                      <span className={cn("text-xs font-semibold truncate w-full", isSelected ? "text-accent-cyan" : "text-text-main")}>
+                      <span className={cn("text-xs font-medium truncate w-full", isSelected ? "text-m3-on-secondary-container" : "text-m3-on-surface")}>
                         {option.label}
                       </span>
                       {option.description && (
-                        <span className={cn("text-[10px] mt-0.5 truncate w-full", isSelected ? "text-accent-cyan/70" : "text-text-muted")}>
+                        <span className={cn("text-[10px] mt-0.5 truncate w-full", isSelected ? "text-m3-on-secondary-container/70" : "text-m3-on-surface-variant")}>
                           {option.description}
                         </span>
                       )}
                     </div>
 
-                    {isSelected && <Check className='h-3.5 w-3.5 text-accent-cyan shrink-0 ml-3 animate-scaleIn' />}
-                  </button>
+                    {isSelected && <Check className='h-3.5 w-3.5 text-m3-primary shrink-0 ml-3 animate-scaleIn' />}
+                  </Button>
                 );
               })}
             </div>

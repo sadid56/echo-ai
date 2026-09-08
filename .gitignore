@@ -7,19 +7,53 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Node / Frontend build outputs
+node_modules/
+dist/
+dist-ssr/
 *.local
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.env
+
+# Rust / Cargo build outputs
+target/
+src-tauri/target/
+*.rlib
+*.so
+*.dylib
+*.dll
+src-tauri/gen/schemas/
+
+# Android & Mobile build outputs
+*.apk
+*.aab
+build/
+**/build/
+.gradle/
+**/.gradle/
+local.properties
+**/local.properties
+key.properties
+**/key.properties
+keystore.properties
+**/keystore.properties
+*.jks
+*.keystore
+**/.cxx/
+**/captures/
+**/app/src/main/jniLibs/
+**/tauri.properties

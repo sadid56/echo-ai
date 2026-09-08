@@ -8,8 +8,11 @@ use crate::ai::memory::ChatMemory;
 use crate::utils::config::AppConfig;
 use std::sync::Mutex;
 use tauri::{AppHandle, State, Manager};
+#[cfg(desktop)]
 use tauri::image::Image;
+#[cfg(desktop)]
 use tauri::menu::{Menu, MenuItem};
+#[cfg(desktop)]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 use crate::ai::providers::Attachment;
@@ -49,6 +52,16 @@ fn update_config(state: State<'_, AppState>, config: AppConfig) -> Result<(), St
 fn clear_chat(state: State<'_, AppState>) -> Result<(), String> {
     let mut mem = state.memory.lock().unwrap();
     mem.clear();
+    Ok(())
+}
+
+#[tauri::command]
+fn set_chat_history(
+    state: State<'_, AppState>,
+    messages: Vec<crate::ai::providers::Message>,
+) -> Result<(), String> {
+    let mut mem = state.memory.lock().unwrap();
+    mem.set_messages(messages);
     Ok(())
 }
 
@@ -169,46 +182,49 @@ pub fn run() {
             crate::system::telegram::start_telegram_listener(handle.clone());
             crate::system::clipboard_helper::start_clipboard_helper(handle);
             
-            // System Tray Menu Setup
-            let quit_i = MenuItem::with_id(app, "quit", "Quit Echo AI", true, None::<&str>)?;
-            let show_i = MenuItem::with_id(app, "show", "Show Main Window", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+            // System Tray Menu Setup (Desktop Only)
+            #[cfg(desktop)]
+            {
+                let quit_i = MenuItem::with_id(app, "quit", "Quit Echo AI", true, None::<&str>)?;
+                let show_i = MenuItem::with_id(app, "show", "Show Main Window", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
 
-            let icon_bytes = include_bytes!("../icons/tray.png"); // force rebuild for new bold tray icon
-            let icon = Image::from_bytes(icon_bytes)?;
+                let icon_bytes = include_bytes!("../icons/tray.png");
+                let icon = Image::from_bytes(icon_bytes)?;
 
-            let _tray = TrayIconBuilder::new()
-                .icon(icon)
-                .menu(&menu)
-                .on_menu_event(|app, event| {
-                    match event.id.as_ref() {
-                        "quit" => {
-                            std::process::exit(0);
+                let _tray = TrayIconBuilder::new()
+                    .icon(icon)
+                    .menu(&menu)
+                    .on_menu_event(|app, event| {
+                        match event.id.as_ref() {
+                            "quit" => {
+                                std::process::exit(0);
+                            }
+                            "show" => {
+                                if let Some(window) = app.get_webview_window("main") {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
+                            _ => {}
                         }
-                        "show" => {
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = event
+                        {
+                            let app = tray.app_handle();
                             if let Some(window) = app.get_webview_window("main") {
                                 let _ = window.show();
                                 let _ = window.set_focus();
                             }
                         }
-                        _ => {}
-                    }
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
-                })
-                .build(app)?;
+                    })
+                    .build(app)?;
+            }
             
             Ok(())
         })
@@ -217,6 +233,7 @@ pub fn run() {
             get_config,
             update_config,
             clear_chat,
+            set_chat_history,
             transcribe_audio,
             start_recording,
             stop_recording,

@@ -33,17 +33,17 @@ export function GoogleSearchSettings({ register, watch, setValue }: GoogleSearch
   const percentage = Math.min((searchStats.count / limit) * 100, 100);
 
   return (
-    <div className='space-y-6 animate-fadeIn'>
+    <div className='space-y-5 animate-fadeIn'>
       <div className='space-y-4'>
         <SectionHeader>Search Engine Configuration</SectionHeader>
-        <p className='text-sm text-text-muted leading-relaxed'>
+        <p className='text-xs sm:text-sm text-m3-on-surface-variant leading-relaxed'>
           Configure how Echo AI searches the web in the background. Background searching retrieves jobs, news, and info instantly without opening any physical browser windows.
         </p>
 
-        {/* Engine Selector using custom Dropdown component */}
-        <div className='space-y-2.5'>
-          <label className='text-xs font-semibold uppercase tracking-wider text-text-muted block'>
-            Select Search Engine
+        {/* Engine Selector */}
+        <div className='space-y-2'>
+          <label className='text-xs font-medium text-m3-on-surface-variant block'>
+            Select Active Search Engine
           </label>
           <Dropdown
             value={selectedEngine}
@@ -54,45 +54,45 @@ export function GoogleSearchSettings({ register, watch, setValue }: GoogleSearch
 
         {/* Conditional Configuration for Serper.dev */}
         {selectedEngine === "serper" && (
-          <div className='space-y-4 pt-2 animate-fadeIn'>
+          <div className='space-y-4 pt-1 animate-fadeIn'>
             {/* Dynamic Usage Statistics Card */}
-            <Card className='border-border-color bg-bg-secondary/40 p-5 space-y-4 rounded-xl'>
+            <Card className='space-y-4 shadow-sm border border-m3-outline-variant/60'>
               <div className='flex justify-between items-center'>
                 <div className='flex gap-2.5 items-center'>
-                  <div className='p-1.5 rounded-lg bg-accent-cyan/15 text-accent-cyan shrink-0'>
-                    <Activity className='h-4 w-4 animate-pulse' />
+                  <div className='p-2 rounded-full bg-m3-surface-container text-m3-primary shrink-0'>
+                    <Activity className='h-4 w-4' />
                   </div>
                   <div>
-                    <h4 className='text-xs font-semibold text-text-main'>Daily Usage Statistics</h4>
-                    <p className='text-[10px] text-text-muted mt-0.5'>Date: {searchStats.date}</p>
+                    <h4 className='text-xs font-semibold text-m3-on-surface'>Daily Usage Statistics</h4>
+                    <p className='text-[10px] text-m3-on-surface-variant mt-0.5'>Date: {searchStats.date}</p>
                   </div>
                 </div>
-                <div className='text-right'>
-                  <span className='px-2 py-0.5 text-[9px] font-bold rounded bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/25 uppercase tracking-wide'>
+                <div>
+                  <span className='px-2.5 py-0.5 text-[10px] font-semibold rounded-full bg-m3-primary/15 text-m3-primary border border-m3-primary/20'>
                     Free Tier
                   </span>
                 </div>
               </div>
 
               <div className='space-y-1.5'>
-                <div className='flex justify-between text-[11px] font-semibold text-text-muted'>
+                <div className='flex justify-between text-[11px] font-medium text-m3-on-surface-variant'>
                   <span>Queries Used Today</span>
                   <span>{searchStats.count} / {limit} ({~~percentage}%)</span>
                 </div>
-                <div className='w-full h-2 bg-bg-primary rounded-full overflow-hidden border border-border-color/10'>
+                <div className='w-full h-2 bg-m3-surface-container-highest rounded-full overflow-hidden'>
                   <div 
-                    className='h-full bg-accent-cyan rounded-full transition-all duration-500 ease-out'
+                    className='h-full bg-m3-primary rounded-full transition-all duration-500 ease-out'
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
               </div>
 
-              <p className='text-[10px] text-text-muted leading-relaxed italic'>
+              <p className='text-[10px] text-m3-on-surface-variant/70 leading-relaxed italic'>
                 * Serper.dev provides 2,500 queries completely free upon signing up, without requiring a credit card.
               </p>
             </Card>
 
-            <div className='space-y-6 pt-2'>
+            <div className='pt-1'>
               <TextField
                 name='googleSearchApiKey'
                 label='Serper.dev API Key'
@@ -102,27 +102,27 @@ export function GoogleSearchSettings({ register, watch, setValue }: GoogleSearch
               />
             </div>
 
-            <Card className='mt-6 border-accent-cyan/10 bg-accent-cyan/5 p-5 space-y-4 rounded-xl'>
+            <Card className='mt-4 border border-m3-primary/20 bg-m3-primary/[0.03] space-y-4 shadow-sm'>
               <div className='flex gap-3 items-start'>
-                <div className='p-1.5 rounded-lg bg-accent-cyan/20 text-accent-cyan shrink-0'>
-                  <HelpCircle className='h-5 w-5' />
+                <div className='p-2 rounded-full bg-m3-primary/15 text-m3-primary shrink-0'>
+                  <HelpCircle className='h-4 w-4' />
                 </div>
                 <div>
-                  <h4 className='text-sm font-semibold text-text-main'>How to get your FREE API Key (1-minute setup):</h4>
-                  <p className='text-xs text-text-muted mt-1 leading-relaxed'>
+                  <h4 className='text-xs font-semibold text-m3-on-surface'>How to get your free API Key:</h4>
+                  <p className='text-[11px] text-m3-on-surface-variant mt-0.5 leading-relaxed'>
                     Get 2,500 search queries for free with no credit card required.
                   </p>
                 </div>
               </div>
 
-              <ol className='text-xs space-y-2.5 text-text-muted pl-10 list-decimal leading-relaxed'>
+              <ol className='text-xs space-y-2 text-m3-on-surface-variant pl-8 list-decimal leading-relaxed'>
                 <li>
                   Go to the{" "}
                   <a
                     href='https://serper.dev'
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='inline-flex items-center gap-0.5 text-accent-cyan hover:underline font-semibold'
+                    className='inline-flex items-center gap-1 text-m3-primary hover:underline font-medium'
                   >
                     Serper.dev website
                     <ExternalLink className='h-3 w-3' />
@@ -130,12 +130,12 @@ export function GoogleSearchSettings({ register, watch, setValue }: GoogleSearch
                   and click <strong>Sign Up</strong>.
                 </li>
                 <li>Create a free account.</li>
-                <li>Once logged in, copy the **API Key** from the dashboard.</li>
-                <li>Paste the key into the **Serper.dev API Key** field above.</li>
+                <li>Once logged in, copy the API Key from your dashboard.</li>
+                <li>Paste the key into the <strong>Serper.dev API Key</strong> field above.</li>
               </ol>
 
-              <div className='flex items-center gap-2.5 bg-bg-primary/50 p-3 rounded-lg border border-border-color/20 text-[11px] text-text-muted'>
-                <Info className='h-4 w-4 text-accent-cyan shrink-0' />
+              <div className='flex items-center gap-2.5 bg-m3-surface-container/60 p-3 rounded-xl border border-m3-outline-variant/40 text-[11px] text-m3-on-surface-variant'>
+                <Info className='h-4 w-4 text-m3-primary shrink-0' />
                 <span>Serper.dev does not restrict web search and doesn't require any credit card validation.</span>
               </div>
             </Card>
@@ -144,23 +144,23 @@ export function GoogleSearchSettings({ register, watch, setValue }: GoogleSearch
 
         {/* Configuration for DuckDuckGo */}
         {selectedEngine === "duckduckgo" && (
-          <div className='animate-fadeIn pt-2'>
-            <Card className='border-border-color bg-bg-secondary/40 p-5 space-y-4 rounded-xl'>
+          <div className='animate-fadeIn pt-1'>
+            <Card className='space-y-4 shadow-sm border border-m3-outline-variant/60'>
               <div className='flex gap-3 items-start'>
-                <div className='p-1.5 rounded-lg bg-accent-cyan/15 text-accent-cyan shrink-0'>
-                  <Shield className='h-5 w-5' />
+                <div className='p-2 rounded-full bg-m3-primary/15 text-m3-primary shrink-0'>
+                  <Shield className='h-4 w-4' />
                 </div>
                 <div>
-                  <h4 className='text-xs font-semibold text-text-main'>DuckDuckGo Integration Active</h4>
-                  <p className='text-[11px] text-text-muted mt-1.5 leading-relaxed'>
-                    DuckDuckGo is currently set as your default search engine. The AI will query DuckDuckGo directly in the background using our custom parser sidecar.
+                  <h4 className='text-xs font-semibold text-m3-on-surface'>DuckDuckGo Privacy Integration Active</h4>
+                  <p className='text-[11px] text-m3-on-surface-variant mt-1 leading-relaxed'>
+                    DuckDuckGo is currently set as your default search engine. The AI will query DuckDuckGo directly in the background using our custom scraper sidecar.
                   </p>
                 </div>
               </div>
               
-              <div className='flex items-center gap-2.5 bg-bg-primary/50 p-3 rounded-lg border border-border-color/20 text-[11px] text-text-muted'>
-                <Info className='h-4 w-4 text-accent-cyan shrink-0' />
-                <span>No API Key, signup, or internet accounts are needed. It works completely out-of-the-box and has unlimited queries.</span>
+              <div className='flex items-center gap-2.5 bg-m3-surface-container/60 p-3 rounded-xl border border-m3-outline-variant/40 text-[11px] text-m3-on-surface-variant'>
+                <Info className='h-4 w-4 text-m3-primary shrink-0' />
+                <span>No API Key, signup, or internet accounts are needed. It works completely out-of-the-box with unlimited queries.</span>
               </div>
             </Card>
           </div>

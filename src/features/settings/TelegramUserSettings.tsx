@@ -3,6 +3,8 @@ import { UseFormRegister, UseFormWatch } from "react-hook-form";
 import { TextField } from "../../components/ui/textField";
 import { SectionHeader } from "../../components/ui/SectionHeader";
 import { Switch } from "../../components/ui/switch";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/button";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ExternalLink, Info, Key, CheckCircle, ShieldAlert, Loader2 } from "lucide-react";
@@ -88,18 +90,18 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
     <div className='space-y-6 animate-fadeIn'>
       <div className='space-y-4'>
         <SectionHeader>Telegram Personal Account Integration (MTProto)</SectionHeader>
-        <p className='text-sm text-text-muted leading-relaxed'>
+        <p className='text-xs sm:text-sm text-m3-on-surface-variant leading-relaxed'>
           Connect Echo AI to your personal Telegram account. This allows Echo to check your active chats, read recent messages from friends
           or groups, and reply on your behalf.
         </p>
 
         {/* Info Setup Box */}
-        <div className='bg-bg-secondary/40 border border-border-color/30 rounded-2xl p-5 space-y-3.5 text-sm'>
-          <div className='flex gap-2.5 items-start text-accent-cyan'>
-            <Info className='h-4 w-4 mt-0.5 shrink-0' />
-            <span className='font-semibold text-xs tracking-wider uppercase'>How to obtain API ID and API Hash:</span>
+        <Card className='space-y-3 shadow-sm border border-m3-outline-variant/60'>
+          <div className='flex gap-2.5 items-center text-m3-primary'>
+            <Info className='h-4 w-4 shrink-0' />
+            <span className='font-semibold text-xs tracking-wide'>How to obtain API ID and API Hash:</span>
           </div>
-          <ol className='list-decimal list-inside space-y-2 text-text-muted text-xs leading-relaxed pl-1.5'>
+          <ol className='list-decimal list-inside space-y-2 text-m3-on-surface-variant text-xs leading-relaxed pl-1'>
             <li>
               Go to{" "}
               <a
@@ -120,7 +122,7 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
               Copy the <strong>App api_id</strong> and <strong>App api_hash</strong> and enter them below.
             </li>
           </ol>
-        </div>
+        </Card>
 
         {/* Enabled Toggle */}
         <div className='pt-2'>
@@ -147,30 +149,27 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
             </div>
 
             {/* Authentication Flow UI */}
-            <div className='border border-border-color/40 bg-bg-secondary/25 p-6 rounded-2xl space-y-4'>
-              <h4 className='text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5'>
-                <Key className='h-4 w-4 text-accent-cyan' /> Account Connection Status
+            <Card className='space-y-4 shadow-sm'>
+              <h4 className='text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant flex items-center gap-1.5'>
+                <Key className='h-4 w-4 text-m3-primary' /> Account Connection Status
               </h4>
 
               <div className='flex flex-wrap items-center gap-4'>
-                <button
-                  type='button'
+                <Button
+                  variant={status === "connected" ? "secondary" : "primary"}
+                  size='md'
                   onClick={handleConnect}
                   disabled={loading || status === "connected"}
-                  className={`px-5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center gap-2 ${
-                    status === "connected"
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default"
-                      : "bg-accent-cyan text-bg-primary hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] disabled:opacity-50"
-                  }`}
+                  className={status === "connected" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default" : ""}
                 >
-                  {loading && <Loader2 className='h-3.5 w-3.5 animate-spin' />}
+                  {loading && <Loader2 className='h-3.5 w-3.5 animate-spin mr-1.5' />}
                   {status === "connected" ? "Account Linked" : "Link Telegram Account"}
-                </button>
+                </Button>
 
                 {/* Status Indicator labels */}
                 {status === "installing_dependencies" && (
                   <div className='flex items-center gap-2 text-xs text-text-muted animate-pulse'>
-                    <Loader2 className='h-4 w-4 animate-spin text-accent-cyan' />
+                    <Loader2 className='h-4 w-4 animate-spin text-m3-primary' />
                     Installing Telethon library...
                   </div>
                 )}
@@ -185,9 +184,9 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
 
               {/* OTP Form Overlay */}
               {status === "auth_required" && (
-                <div className='p-4 bg-bg-primary/50 border border-accent-cyan/30 rounded-xl space-y-3 max-w-sm animate-fadeIn'>
-                  <div className='text-xs font-semibold text-accent-cyan'>Verification Code Sent!</div>
-                  <p className='text-xs text-text-muted leading-relaxed'>
+                <div className='p-4 bg-m3-surface-container border border-m3-primary/30 rounded-xl space-y-3 max-w-sm animate-fadeIn'>
+                  <div className='text-xs font-semibold text-m3-primary'>Verification Code Sent!</div>
+                  <p className='text-xs text-m3-on-surface-variant leading-relaxed'>
                     Telegram has sent a login code. Enter it below to authorize this device:
                   </p>
                   <div className='flex gap-2.5'>
@@ -196,24 +195,24 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
                       placeholder='Enter OTP Code'
-                      className='flex-1 px-3 py-2 text-xs bg-bg-secondary border border-border-color/30 rounded-lg text-text-main focus:outline-none focus:border-accent-cyan/60'
+                      className='flex-1 px-3 py-2 text-xs bg-m3-surface border border-m3-outline-variant rounded-lg text-m3-on-surface focus:outline-none focus:border-m3-primary'
                     />
-                    <button
-                      type='button'
+                    <Button
+                      variant='primary'
+                      size='sm'
                       onClick={handleSubmitOtp}
-                      className='px-4 py-2 bg-accent-cyan text-bg-primary rounded-lg font-bold text-xs hover:bg-accent-cyan/90'
                     >
                       Submit
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
 
               {/* 2FA Password Form Overlay */}
               {status === "password_required" && (
-                <div className='p-4 bg-bg-primary/50 border border-accent-cyan/30 rounded-xl space-y-3 max-w-sm animate-fadeIn'>
-                  <div className='text-xs font-semibold text-accent-cyan'>2FA Password Required</div>
-                  <p className='text-xs text-text-muted leading-relaxed'>
+                <div className='p-4 bg-m3-surface-container border border-m3-primary/30 rounded-xl space-y-3 max-w-sm animate-fadeIn'>
+                  <div className='text-xs font-semibold text-m3-primary'>2FA Password Required</div>
+                  <p className='text-xs text-m3-on-surface-variant leading-relaxed'>
                     Your account has Two-Step Verification enabled. Enter your password:
                   </p>
                   <div className='flex gap-2.5'>
@@ -222,15 +221,15 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder='Enter 2FA Password'
-                      className='flex-1 px-3 py-2 text-xs bg-bg-secondary border border-border-color/30 rounded-lg text-text-main focus:outline-none focus:border-accent-cyan/60'
+                      className='flex-1 px-3 py-2 text-xs bg-m3-surface border border-m3-outline-variant rounded-lg text-m3-on-surface focus:outline-none focus:border-m3-primary'
                     />
-                    <button
-                      type='button'
+                    <Button
+                      variant='primary'
+                      size='sm'
                       onClick={handleSubmitPassword}
-                      className='px-4 py-2 bg-accent-cyan text-bg-primary rounded-lg font-bold text-xs hover:bg-accent-cyan/90'
                     >
                       Verify
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -245,7 +244,7 @@ export function TelegramUserSettings({ register, watch }: TelegramUserSettingsPr
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         )}
       </div>

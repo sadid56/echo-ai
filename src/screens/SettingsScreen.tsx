@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { AppConfig, useChatStore, ScheduledTask } from "../store/chatStore";
-import { SettingsSidebar, SettingsTab } from "../features/settings/SettingsSidebar";
+import { SettingsSidebar, SettingsTab, sidebarItems } from "../features/settings/SettingsSidebar";
 import { AlertDialog } from "../components/ui/dialog";
+import { cn } from "../lib/cn";
 // Subcomponents import
 import { TextModelSettings } from "../features/settings/TextModelSettings";
 import { TranscribeModelSettings } from "../features/settings/TranscribeModelSettings";
@@ -112,10 +113,13 @@ export function SettingsScreen() {
   const isScheduleListDirty = JSON.stringify(scheduleList) !== JSON.stringify(config?.schedule ?? []);
   const isChanged = isDirty || isScheduleListDirty;
 
+  const isInitialized = useRef(false);
+
   useEffect(() => {
-    if (config) {
+    if (config && !isInitialized.current) {
       reset(buildDefaultValues(config));
       setScheduleList(config.schedule ?? []);
+      isInitialized.current = true;
     }
   }, [config, reset]);
 
@@ -208,16 +212,38 @@ export function SettingsScreen() {
   };
 
   return (
-    <div className='flex flex-1 bg-bg-primary text-text-main overflow-hidden'>
-      {/* Settings Navigation Sidebar */}
+    <div className='flex flex-1 bg-m3-surface text-m3-on-surface overflow-hidden'>
+      {/* Desktop Settings Navigation Sidebar */}
       <SettingsSidebar activeTab={activeTab} onTabChange={handleTabChange} onBack={handleBack} />
 
       {/* Main Settings Form Panel */}
-      <div className='flex-1 h-full flex flex-col bg-bg-primary overflow-hidden'>
+      <div className='flex-1 h-full flex flex-col bg-m3-surface overflow-hidden min-w-0'>
+        {/* Mobile Horizontal M3 Category Chips */}
+        <div className='md:hidden flex items-center gap-1.5 px-3 py-2 bg-m3-surface-container-low border-b border-m3-outline-variant overflow-x-auto scrollbar-none select-none shrink-0'>
+          {sidebarItems.map((item) => {
+              const isActive = activeTab === item.id;
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.id}
+                  variant={isActive ? "primary" : "secondary"}
+                  size='sm'
+                  onClick={() => handleTabChange(item.id)}
+                  className={cn(
+                    "gap-1.5 px-3 py-1.5 whitespace-nowrap shrink-0",
+                    !isActive && "border-m3-outline-variant/60 text-m3-on-surface-variant hover:text-m3-on-surface"
+                  )}
+                >
+                  <Icon className='w-3.5 h-3.5' />
+                  <span>{item.label}</span>
+                </Button>
+              );
+            })}
+          </div>
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit(onSubmit)} className='flex-1 flex flex-col min-h-0 overflow-hidden'>
-          <div className='flex-1 overflow-y-auto p-8 space-y-6 max-w-2xl min-h-0 select-text scrollbar-none'>
+          <div className='flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 max-w-3xl min-h-0 select-text scrollbar-none'>
             {activeTab === "textModel" && <TextModelSettings register={register} setValue={setValue} />}
             {activeTab === "transcribeModel" && <TranscribeModelSettings register={register} setValue={setValue} />}
             {activeTab === "email" && <EmailSettings register={register} />}
@@ -229,12 +255,15 @@ export function SettingsScreen() {
             {activeTab === "library" && <LibrarySettings setValue={setValue} />}
           </div>
 
-          {/* Fixed Footer Action Bar */}
-          <footer className='px-8 py-4.5 border-t border-border-color/30 bg-bg-secondary/40 backdrop-blur-md flex justify-end gap-3 select-none'>
-            <Button variant='secondary' onClick={handleBack}>
+          {/* Fixed Footer Action Bar with Safe Area Bottom */}
+          <footer 
+            style={{ paddingBottom: "calc(var(--safe-bottom) + 0.75rem)" }}
+            className='px-4 sm:px-8 pt-3 pb-3 sm:py-4 border-t border-m3-outline-variant bg-m3-surface-container-low/95 backdrop-blur-md flex justify-end gap-2.5 select-none shrink-0'
+          >
+            <Button variant='secondary' size='sm' onClick={handleBack} className='rounded-full px-4 py-2 text-xs font-medium'>
               Cancel
             </Button>
-            <Button variant='primary' type='submit' disabled={!isChanged}>
+            <Button variant='primary' size='sm' type='submit' disabled={!isChanged} className='rounded-full px-5 py-2 text-xs font-semibold bg-m3-primary text-m3-on-primary hover:brightness-105'>
               Save Configuration
             </Button>
           </footer>

@@ -31,11 +31,23 @@ pub fn send_notification(title: &str, body: &str) -> Result<(), String> {
         }
     }
 
-    notify_rust::Notification::new()
-        .summary(title)
-        .body(body)
-        .icon("dialog-information")
-        .show()
-        .map(|_| ())
-        .map_err(|e| format!("Failed to send desktop notification: {}", e))
+    #[cfg(target_os = "android")]
+    {
+        println!("[Notification] {}: {}", title, body);
+        return Ok(());
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "android")))]
+    {
+        notify_rust::Notification::new()
+            .summary(title)
+            .body(body)
+            .icon("dialog-information")
+            .show()
+            .map(|_| ())
+            .map_err(|e| format!("Failed to send desktop notification: {}", e))
+    }
+
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    Ok(())
 }

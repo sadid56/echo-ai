@@ -1,10 +1,17 @@
 use std::time::Duration;
+#[cfg(not(target_os = "android"))]
 use arboard::Clipboard;
 use tauri::{AppHandle, Emitter, Manager};
 use crate::ai::orchestrator::{AppState, Orchestrator};
 use crate::system::notification;
 
 pub fn start_clipboard_helper(app: AppHandle) {
+    #[cfg(target_os = "android")]
+    {
+        let _ = app;
+    }
+
+    #[cfg(not(target_os = "android"))]
     tauri::async_runtime::spawn(async move {
         let mut last_clipboard_content = String::new();
         

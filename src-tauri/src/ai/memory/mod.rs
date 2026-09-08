@@ -33,6 +33,16 @@ impl ChatMemory {
         self.truncate_history();
     }
 
+    pub fn set_messages(&mut self, messages: Vec<Message>) {
+        let system_prompt = self.messages.iter().find(|m| m.role == Role::System).cloned();
+        self.messages = messages;
+        if let Some(sys) = system_prompt {
+            self.messages.retain(|m| m.role != Role::System);
+            self.messages.insert(0, sys);
+        }
+        self.truncate_history();
+    }
+
     pub fn clear(&mut self) {
         let system_prompt = self.messages.iter().find(|m| m.role == Role::System).cloned();
         self.messages.clear();
