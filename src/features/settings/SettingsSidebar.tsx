@@ -41,18 +41,14 @@ export function SettingsSidebar({ activeTab, onTabChange }: SettingsSidebarProps
           return (
             <Button
               key={item.id}
-              variant={isActive ? "secondary" : "ghost"}
+              variant='ghost'
+              isActive={isActive}
               fullWidth
               onClick={() => onTabChange(item.id)}
-              className={cn(
-                "justify-start gap-3 px-3.5 py-2.5 h-10 rounded-full text-left font-normal transition-all",
-                isActive
-                  ? "bg-m3-primary/15 text-m3-primary font-semibold shadow-none border-none"
-                  : "text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-white/[0.04]"
-              )}
+              className='justify-start gap-3 px-3.5 py-2.5 h-10 rounded-full text-left font-normal'
             >
-              <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-m3-primary" : "text-m3-on-surface-variant")} />
-              <span className="text-xs truncate">{item.label}</span>
+              <Icon className={cn("h-4 w-4 shrink-0")} />
+              <span className='text-xs truncate'>{item.label}</span>
             </Button>
           );
         })}

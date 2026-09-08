@@ -1,4 +1,4 @@
-import { Mic, Plus, Mail, GitBranch, Bug, Code, Terminal, Square, ArrowUp, File, Music } from "lucide-react";
+import { Mic, Plus, Mail, GitBranch, Bug, Square, ArrowUp, File, Music, HardDrive, Smartphone } from "lucide-react";
 import { type KeyboardEvent, type SyntheticEvent, useState, useRef, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import { useChatStore } from "../../store/chatStore";
@@ -131,14 +131,29 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick, onFocu
     setAttachments((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  const formatModelLabel = (modelId: string) => {
+    const parts = modelId.split("/");
+    return parts.length > 1 ? parts[1] : modelId;
+  };
+
   const activeModel = config?.text_model?.model_name || "google/gemini-2.5-flash";
   const configuredModels = config?.text_model?.models ?? [];
-  const selectOptions = configuredModels.map(m => ({ label: m, value: m }));
+  const selectOptions = configuredModels.map(m => ({ label: formatModelLabel(m), value: m }));
   if (!configuredModels.includes(activeModel)) {
-    selectOptions.push({ label: `${activeModel} (Current)`, value: activeModel });
+    selectOptions.push({ label: formatModelLabel(activeModel), value: activeModel });
   }
 
   const quickCommands = [
+    {
+      label: "Check storage",
+      prompt: "Koto gb storage khase amr total? Check device storage details.",
+      icon: <HardDrive className="w-3.5 h-3.5 text-m3-primary/90" />
+    },
+    {
+      label: "Device specs",
+      prompt: "Amr system configuration ki? Check device and OS details.",
+      icon: <Smartphone className="w-3.5 h-3.5 text-m3-primary/90" />
+    },
     {
       label: "Fetch unread emails",
       prompt: "Fetch my latest unread emails and summarize them.",
@@ -150,25 +165,15 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick, onFocu
       icon: <Music className="w-3.5 h-3.5 text-m3-primary/90" />
     },
     {
-      label: "Review git diff",
-      prompt: "Review my recent git changes and summarize them.",
-      icon: <GitBranch className="w-3.5 h-3.5 text-m3-primary/90" />
-    },
-    {
       label: "Explain code error",
       prompt: "Explain this code error and suggest a fix: ",
       icon: <Bug className="w-3.5 h-3.5 text-m3-primary/90" />
     },
     {
-      label: "Refactor component",
-      prompt: "Suggest clean code refactoring improvements for this component: ",
-      icon: <Code className="w-3.5 h-3.5 text-m3-primary/90" />
+      label: "Review git diff",
+      prompt: "Review my recent git changes and summarize them.",
+      icon: <GitBranch className="w-3.5 h-3.5 text-m3-primary/90" />
     },
-    {
-      label: "Write unit tests",
-      prompt: "Generate comprehensive unit tests for this function: ",
-      icon: <Terminal className="w-3.5 h-3.5 text-m3-primary/90" />
-    }
   ];
 
   return (
@@ -297,7 +302,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({ onVoiceClick, onFocu
                   }
                 }}
                 options={selectOptions}
-                className="w-28 xs:w-36 sm:w-48"
+                className="w-auto min-w-[95px] max-w-[140px] sm:max-w-[210px]"
                 triggerClassName="h-9 py-1 px-2.5 bg-m3-surface-container hover:bg-white/[0.06] border-m3-outline-variant/60 rounded-full text-[11px] sm:text-xs font-medium"
               />
             </div>

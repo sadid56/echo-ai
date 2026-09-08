@@ -19,7 +19,6 @@ const frequencyOptions = [
 ];
 
 export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSettingsProps) {
-  // Form states for adding a new scheduled task
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskFrequency, setNewTaskFrequency] = useState("daily");
   const [newTaskDayOfMonth, setNewTaskDayOfMonth] = useState(1);
@@ -88,10 +87,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
         ) : (
           <div className='space-y-3.5'>
             {scheduleList.map((task, idx) => (
-              <Card
-                key={idx}
-                className='flex items-center justify-between p-4 sm:p-4.5 space-y-0 shadow-sm'
-              >
+              <Card key={idx} className='flex items-center justify-between p-4 sm:p-4.5 space-y-0 shadow-sm'>
                 <div>
                   <div className='flex items-center gap-2.5'>
                     <span className='text-xs font-bold text-m3-primary'>{task.name}</span>
@@ -101,12 +97,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
                   </div>
                   <p className='mt-1 text-xs text-m3-on-surface-variant line-clamp-1'>{task.prompt}</p>
                 </div>
-                <Button
-                  variant='error'
-                  size='sm'
-                  onClick={() => handleRemoveTask(idx)}
-                  className='shrink-0'
-                >
+                <Button variant='error' size='sm' onClick={() => handleRemoveTask(idx)} className='shrink-0'>
                   Remove
                 </Button>
               </Card>
@@ -114,7 +105,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
           </div>
         )}
 
-        <Card className='mt-6 space-y-6 shadow-sm border border-m3-outline-variant/60'>
+        <Card className='mt-6 space-y-6 shadow-sm'>
           <div>
             <h4 className='text-xs font-semibold text-m3-on-surface'>Add New Scheduled Task</h4>
           </div>
@@ -130,7 +121,7 @@ export function ScheduleSettings({ scheduleList, setScheduleList }: ScheduleSett
           </div>
 
           <div
-            className={`grid gap-6 ${newTaskFrequency === "weekly" || newTaskFrequency === "monthly" ? "sm:grid-cols-3" : "sm:grid-cols-2"} bg-m3-surface-container/30 rounded-xl border border-m3-outline-variant/30`}
+            className={`grid gap-6 ${newTaskFrequency === "weekly" || newTaskFrequency === "monthly" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
           >
             {newTaskFrequency === "interval" ? (
               <div className='sm:col-span-3'>

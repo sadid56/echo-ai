@@ -10,13 +10,13 @@ function App() {
     <BrowserRouter>
       <div 
         id='app-container' 
-        className='flex flex-col h-[100dvh] bg-m3-surface text-m3-on-surface relative overflow-hidden rounded-[20px] sm:rounded-[24px] border border-m3-outline-variant shadow-2xl isolate'
+        className='flex flex-col h-full w-full bg-m3-surface text-m3-on-surface relative overflow-hidden rounded-none sm:rounded-[24px] border-0 sm:border border-m3-outline-variant shadow-2xl isolate'
         style={{
           WebkitMaskImage: "-webkit-radial-gradient(white, black)",
         }}
       >
 
-        <div className='relative z-20'>
+        <div className='relative z-20 shrink-0'>
           <Header />
         </div>
 

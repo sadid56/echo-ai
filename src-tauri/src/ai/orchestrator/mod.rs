@@ -68,6 +68,7 @@ impl Orchestrator {
         system_prompt.push_str(&active_engine_rule);
 
         // Detect host OS and environment dynamically
+        let is_android = std::env::consts::OS == "android";
         let os_details = match std::env::consts::OS {
             "macos" => {
                 let ver = std::process::Command::new("sw_vers")
@@ -75,6 +76,24 @@ impl Orchestrator {
                     .map(|o| String::from_utf8_lossy(&o.stdout).trim().replace('\n', ", "))
                     .unwrap_or_else(|_| "Apple macOS".to_string());
                 format!("Apple macOS ({})", ver)
+            },
+            "android" => {
+                let release = std::process::Command::new("getprop")
+                    .arg("ro.build.version.release")
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                    .unwrap_or_else(|_| "14".to_string());
+                let model = std::process::Command::new("getprop")
+                    .arg("ro.product.model")
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                    .unwrap_or_else(|_| "Android Device".to_string());
+                let brand = std::process::Command::new("getprop")
+                    .arg("ro.product.brand")
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                    .unwrap_or_default();
+                format!("Google Android {} ({}{})", release, if brand.is_empty() { "".to_string() } else { format!("{} ", brand) }, model)
             },
             "linux" => {
                 let ver = std::fs::read_to_string("/etc/os-release")
@@ -90,23 +109,60 @@ impl Orchestrator {
         let home_dir = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| "~".to_string());
         let current_dir = std::env::current_dir().map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|_| ".".to_string());
 
-        let system_access_rule = format!(
-            "\n\n=== NATIVE OPERATING SYSTEM & ENVIRONMENT ACCESS ===\n\
-            You are Echo, running natively as a desktop AI application directly on the user's computer with full system privileges.\n\
-            - Host Operating System: {}\n\
-            - Architecture: {}\n\
-            - Current User: {}\n\
-            - User Home Directory: {}\n\
-            - Current Working Directory: {}\n\
-            \n\
-            CRITICAL OPERATING SYSTEM RULES:\n\
-            1. NEVER EVER say \"I don't have access to your local machine\", \"I can't check your OS\", \"I cannot see your files\", or \"Run this command yourself in terminal\". You have full native terminal and file system access right now!\n\
-            2. If the user asks what OS they are using, computer hardware, CPU, RAM, disk space, battery, network, IP, installed apps, or running processes, you ALREADY have the system details above, or you MUST call 'execute_command' (e.g. 'sw_vers', 'uname -a', 'top', 'df -h', 'ps aux', 'whoami', 'cat', etc.) to inspect it and answer directly with the real facts!\n\
-            3. You have unrestricted access to the entire file system on this computer. Use 'list_directory' to list any directory (including home '{}', desktop, downloads, documents, root, or any path), 'read_file' to read any file, and 'write_file' to create or edit files anywhere.\n\
-            4. If the user asks to find, create, delete, move, edit, or check any file, or run any script/command, DO IT DIRECTLY using 'execute_command' or the file tools without hesitation. Never refuse or tell the user to do it manually.\n\
-            5. Always act as an autonomous, proactive OS assistant who can manage the entire system for the user.",
-            os_details, os_arch, current_user, home_dir, current_dir, home_dir
-        );
+        let system_access_rule = if is_android {
+            format!(
+                "\n\n=== NATIVE ANDROID MOBILE OPERATING SYSTEM & ENVIRONMENT ACCESS ===\n\
+                You are Echo, running natively as an autonomous AI mobile application directly on the user's Android phone ({os_details}) with system shell and file access.\n\
+                - Host Device & OS: {os_details}\n\
+                - Architecture: {os_arch}\n\
+                - App Storage / Working Directory: {current_dir}\n\
+                - User Storage Directory: /storage/emulated/0 or /sdcard\n\
+                \n\
+                CRITICAL ANDROID OPERATING SYSTEM & CONTROL RULES:\n\
+                1. NEVER say \"I am a desktop app\", \"I don't have access to your phone\", \"I cannot check your device\", or \"Check your settings yourself\". You are running natively ON the user's Android device right now!\n\
+                2. STORAGE MANAGEMENT (CRITICAL):\n\
+                   - On Android, user storage is located at '/data' or '/storage/emulated/0'.\n\
+                   - If the user asks how much storage they have, used GB, or free GB (e.g. 'koto gb storage khase', 'storage check koro', 'phone storage'), DO NOT run plain 'df -h' and ask which partition to inspect! Immediately call 'execute_command' with 'df -h /data' or 'df -h /storage/emulated/0'.\n\
+                   - Parse the output directly (Size, Used, Available, Use%) and tell the user directly: Total Storage, Used Storage, Free Storage, and usage percentage in clear Bengali/English! Never leave the user hanging or confused.\n\
+                3. SYSTEM & DEVICE SPECS (CRITICAL):\n\
+                   - If the user asks 'Amr system configuration ki', phone model, Android version, or CPU specs:\n\
+                     * Android system details are retrieved via 'getprop' and kernel commands! Run 'getprop ro.product.model', 'getprop ro.product.brand', 'getprop ro.build.version.release', 'getprop ro.board.platform', or 'uname -a'.\n\
+                     * For RAM/Memory, run 'cat /proc/meminfo' or 'free -m' (look at MemTotal and MemAvailable).\n\
+                     * DO NOT look for '/etc/os-release', which is only for desktop Linux and does NOT exist on Android!\n\
+                4. BATTERY & STATUS:\n\
+                   - To check battery level: Run 'dumpsys battery' or 'cat /sys/class/power_supply/battery/capacity'.\n\
+                5. APPS & PACKAGES:\n\
+                   - To check or list installed apps: Run 'pm list packages -3' (user apps) or 'pm list packages'.\n\
+                6. USER FILES & DIRECTORIES:\n\
+                   - Photos/Camera: '/storage/emulated/0/DCIM' and '/storage/emulated/0/Pictures'\n\
+                   - Downloads: '/storage/emulated/0/Download'\n\
+                   - Documents: '/storage/emulated/0/Documents'\n\
+                   - Music: '/storage/emulated/0/Music'\n\
+                   - You can search, list, read, or write user files directly using 'execute_command', 'list_directory', 'read_file', and 'write_file'.\n\
+                7. Always act as an autonomous, proactive Android assistant. When asked a question, execute the command first, process the result, and present a friendly, helpful answer in the user's language (Bengali/English) with emojis. Never ask permission or make the user run commands manually!",
+                os_details = os_details,
+                os_arch = os_arch,
+                current_dir = current_dir,
+            )
+        } else {
+            format!(
+                "\n\n=== NATIVE OPERATING SYSTEM & ENVIRONMENT ACCESS ===\n\
+                You are Echo, running natively as a desktop AI application directly on the user's computer with full system privileges.\n\
+                - Host Operating System: {}\n\
+                - Architecture: {}\n\
+                - Current User: {}\n\
+                - User Home Directory: {}\n\
+                - Current Working Directory: {}\n\
+                \n\
+                CRITICAL OPERATING SYSTEM RULES:\n\
+                1. NEVER EVER say \"I don't have access to your local machine\", \"I can't check your OS\", \"I cannot see your files\", or \"Run this command yourself in terminal\". You have full native terminal and file system access right now!\n\
+                2. If the user asks what OS they are using, computer hardware, CPU, RAM, disk space, battery, network, IP, installed apps, or running processes, you ALREADY have the system details above, or you MUST call 'execute_command' (e.g. 'sw_vers', 'uname -a', 'top', 'df -h', 'ps aux', 'whoami', 'cat', etc.) to inspect it and answer directly with the real facts!\n\
+                3. You have unrestricted access to the entire file system on this computer. Use 'list_directory' to list any directory (including home '{}', desktop, downloads, documents, root, or any path), 'read_file' to read any file, and 'write_file' to create or edit files anywhere.\n\
+                4. If the user asks to find, create, delete, move, edit, or check any file, or run any script/command, DO IT DIRECTLY using 'execute_command' or the file tools without hesitation. Never refuse or tell the user to do it manually.\n\
+                5. Always act as an autonomous, proactive OS assistant who can manage the entire system for the user.",
+                os_details, os_arch, current_user, home_dir, current_dir, home_dir
+            )
+        };
         system_prompt.push_str(&system_access_rule);
 
         {

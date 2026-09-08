@@ -53,7 +53,7 @@ const Header = () => {
           >
             <ChevronLeft className='w-5 h-5' />
           </Button>
-          <h1 className='text-base sm:text-lg font-bold tracking-tight text-m3-on-surface font-sans'>
+          <h1 className='text-base sm:text-lg font-semibold tracking-tight text-m3-on-surface font-sans'>
             Settings
           </h1>
         </div>

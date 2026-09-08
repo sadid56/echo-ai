@@ -69,22 +69,22 @@ export const CustomMarkdown = ({ content }: CustomMarkdownProps) => {
       remarkPlugins={[remarkGfm]}
       components={{
         // Typography
-        p: ({ node, ...props }) => <p className='mb-4 last:mb-0 leading-relaxed text-[15px]' {...props} />,
-        h1: ({ node, ...props }) => <h1 className='mt-8 mb-4 text-2xl font-semibold text-white tracking-tight' {...props} />,
-        h2: ({ node, ...props }) => <h2 className='mt-6 mb-3 text-xl font-medium text-white tracking-tight' {...props} />,
-        h3: ({ node, ...props }) => <h3 className='mt-5 mb-2 text-lg font-medium text-white/90' {...props} />,
+        p: ({ node, ...props }) => <p className='mb-4 last:mb-0 leading-relaxed text-[14.5px] sm:text-[15px] break-words [overflow-wrap:anywhere]' {...props} />,
+        h1: ({ node, ...props }) => <h1 className='mt-8 mb-4 text-xl sm:text-2xl font-semibold text-white tracking-tight break-words' {...props} />,
+        h2: ({ node, ...props }) => <h2 className='mt-6 mb-3 text-lg sm:text-xl font-medium text-white tracking-tight break-words' {...props} />,
+        h3: ({ node, ...props }) => <h3 className='mt-5 mb-2 text-base sm:text-lg font-medium text-white/90 break-words' {...props} />,
 
         // Lists
-        ul: ({ node, ...props }) => <ul className='mb-4 ml-5 space-y-1.5 list-disc marker:text-white/30' {...props} />,
-        ol: ({ node, ...props }) => <ol className='mb-4 ml-5 space-y-1.5 list-decimal marker:text-white/30' {...props} />,
-        li: ({ node, ...props }) => <li className='pl-1' {...props} />,
+        ul: ({ node, ...props }) => <ul className='mb-4 ml-5 space-y-1.5 list-disc marker:text-white/30 break-words' {...props} />,
+        ol: ({ node, ...props }) => <ol className='mb-4 ml-5 space-y-1.5 list-decimal marker:text-white/30 break-words' {...props} />,
+        li: ({ node, ...props }) => <li className='pl-1 break-words' {...props} />,
 
         // Inline formatting
         strong: ({ node, ...props }) => <strong className='font-semibold text-white' {...props} />,
         em: ({ node, ...props }) => <em className='italic text-white/80' {...props} />,
         a: ({ node, ...props }) => (
           <a
-            className='font-medium text-accent-cyan hover:text-accent-cyan/80 underline underline-offset-4 decoration-accent-cyan/30 hover:decoration-accent-cyan/80 transition-all duration-200'
+            className='font-medium text-accent-cyan hover:text-accent-cyan/80 underline underline-offset-4 decoration-accent-cyan/30 hover:decoration-accent-cyan/80 transition-all duration-200 break-all'
             target='_blank'
             rel='noopener noreferrer'
             {...props}
@@ -93,7 +93,7 @@ export const CustomMarkdown = ({ content }: CustomMarkdownProps) => {
 
         blockquote: ({ node, ...props }) => (
           <blockquote
-            className='my-5 border-l-2 border-accent-cyan/50 bg-gradient-to-r from-accent-cyan/10 to-transparent py-3 pl-5 pr-4 italic text-white/70 rounded-r-xl'
+            className='my-5 border-l-2 border-accent-cyan/50 bg-gradient-to-r from-accent-cyan/10 to-transparent py-3 pl-4 pr-3 italic text-white/70 rounded-r-xl break-words'
             {...props}
           />
         ),
@@ -111,10 +111,10 @@ export const CustomMarkdown = ({ content }: CustomMarkdownProps) => {
             return <CodeBlock language={language} value={codeString} />;
           }
 
-          // Minimal Inline Code
+          // Minimal Inline Code with mobile wrap protection
           return (
             <code
-              className='px-1.5 py-0.5 mx-0.5 rounded bg-white/10 text-accent-cyan/90 text-[13px] font-mono whitespace-nowrap border border-white/5'
+              className='px-1.5 py-0.5 mx-0.5 rounded bg-white/10 text-accent-cyan/90 text-[12.5px] font-mono break-all [word-break:break-word] border border-white/5 inline-block max-w-full align-baseline'
               {...props}
             >
               {children}
