@@ -25,6 +25,7 @@ impl ChatMemory {
             content: system_prompt,
             name: None,
             tool_calls: None,
+            thought_signature: None,
         });
     }
 

@@ -240,6 +240,7 @@ impl Orchestrator {
                                 content: "You are repeating the same tool call. Please STOP calling tools and summarize the information you have found in the previous command execution outputs.".to_string(),
                                 name: None,
                                 tool_calls: None,
+                                thought_signature: None,
                             });
                             loop_count = MAX_LOOPS - 1;
                             current_prompt.clear();
@@ -260,16 +261,20 @@ impl Orchestrator {
                     content: prompt.to_string(),
                     name: None,
                     tool_calls: None,
+                    thought_signature: None,
                 });
             }
 
             {
                 let mut mem = state.memory.lock().unwrap();
+                let msg_sig = response.tool_calls.as_ref()
+                    .and_then(|tcs| tcs.iter().find_map(|tc| tc.thought_signature.clone()));
                 mem.add_message(Message {
                     role: Role::Assistant,
                     content: response.content.clone().unwrap_or_default(),
                     name: None,
                     tool_calls: response.tool_calls.clone(),
+                    thought_signature: msg_sig,
                 });
             }
 
@@ -304,6 +309,7 @@ impl Orchestrator {
                             content: tool_result,
                             name: Some(tc.id.clone()), 
                             tool_calls: None,
+                            thought_signature: None,
                         });
                     }
                 }
