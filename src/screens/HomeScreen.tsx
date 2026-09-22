@@ -56,14 +56,22 @@ export function HomeScreen() {
       <main className='flex flex-col flex-1 overflow-hidden relative'>
         <div
           ref={scrollRef}
-          className='flex-1 overflow-y-auto px-3 sm:px-6 md:px-12 scroll-smooth transition-[padding-bottom] duration-200 ease-out'
-          style={{ paddingBottom: `${Math.max(dockHeight + 12, 260)}px` }}
+          className={`flex-1 px-3 sm:px-6 md:px-12 ${
+            messages.length === 0
+              ? "overflow-hidden flex flex-col justify-center items-center"
+              : "overflow-y-auto scroll-smooth transition-[padding-bottom] duration-200 ease-out"
+          }`}
+          style={{
+            paddingBottom: messages.length === 0
+              ? `${dockHeight}px`
+              : `${Math.max(dockHeight + 12, 260)}px`
+          }}
         >
           {messages.length === 0 ? (
             /* M3 SWEET SPOT AI HERO - Clean, Centered & Fluid */
-            <div className='flex flex-col items-center justify-center h-full py-6 px-3 select-none space-y-6 sm:space-y-8'>
+            <div className='flex flex-col items-center justify-center select-none space-y-5 sm:space-y-7 my-auto py-4 px-3'>
               {/* Animated Echo AI Core */}
-              <div className='relative flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center'>
+              <div className='relative flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center flex-shrink-0'>
                 {/* Ambient Glow */}
                 <div className='absolute inset-0 rounded-full bg-m3-primary/15 blur-[40px]' />
 
@@ -89,12 +97,12 @@ export function HomeScreen() {
               </div>
 
               <div className='text-center space-y-2 sm:space-y-2.5 z-10 max-w-sm px-2'>
-                <h1 className='text-base sm:text-xl font-normal tracking-tight text-m3-on-surface min-h-[26px] sm:min-h-[30px]'>
-                  Echo is your personal{" "}
+                <h1 className='text-base sm:text-xl font-normal tracking-tight text-m3-on-surface min-h-[26px] sm:min-h-[30px] flex items-center justify-center flex-wrap gap-x-1.5'>
+                  <span>Echo is your personal</span>
                   <FlipWords
                     duration={3000}
                     words={words}
-                    className='text-m3-primary font-medium w-[120px] sm:w-[130px] inline-block text-left whitespace-nowrap'
+                    className='text-m3-primary font-medium inline-block text-left whitespace-nowrap'
                   />
                 </h1>
                 <p className='text-xs sm:text-sm text-m3-on-surface-variant max-w-xs sm:max-w-sm mx-auto leading-relaxed'>

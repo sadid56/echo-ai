@@ -365,6 +365,93 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           ];
           dirty = true;
         }
+
+        // Self-heal decommissioned Groq models
+        const decommissionedGroq = [
+          "gemma2-9b-it",
+          "deepseek-r1-distill-llama-70b",
+          "mixtral-8x7b-32768",
+          "gemma-7b-it",
+          "llama-3.3-70b-versatile",
+          "llama-3.1-8b-instant",
+        ];
+        const isGroq = parsed.text_model?.provider_name?.toLowerCase() === "groq" ||
+                       parsed.text_model?.api_endpoint?.includes("groq.com");
+        if (isGroq) {
+          if (decommissionedGroq.includes(parsed.text_model?.model_name)) {
+            parsed.text_model.model_name = "openai/gpt-oss-120b";
+            dirty = true;
+          }
+          if (Array.isArray(parsed.text_model?.models)) {
+            const hasDecommissioned = parsed.text_model.models.some((m: string) => decommissionedGroq.includes(m));
+            if (hasDecommissioned) {
+              const activeGroqModels = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"];
+              parsed.text_model.models = [
+                ...parsed.text_model.models.filter((m: string) => !decommissionedGroq.includes(m)),
+                ...activeGroqModels.filter((m: string) => !parsed.text_model.models.includes(m)),
+              ];
+              dirty = true;
+            }
+          }
+        }
+
+        // Self-heal outdated Gemini models
+        const outdatedGemini = [
+          "gemini-1.5-flash",
+          "gemini-1.5-pro",
+          "gemini-2.0-flash",
+          "gemini-2.0-flash-exp",
+          "gemini-2.5-flash",
+        ];
+        const isGemini = parsed.text_model?.provider_name?.toLowerCase() === "gemini" ||
+                         parsed.text_model?.api_endpoint?.includes("generativelanguage.googleapis.com");
+        if (isGemini) {
+          if (outdatedGemini.includes(parsed.text_model?.model_name)) {
+            parsed.text_model.model_name = "gemini-3.5-flash-lite";
+            dirty = true;
+          }
+          const activeGeminiModels = [
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-3.6-flash",
+            "gemini-3.8-flash",
+            "gemma-4-26b",
+            "gemma-4-31b",
+          ];
+          if (Array.isArray(parsed.text_model?.models)) {
+            const hasOutdated = parsed.text_model.models.some((m: string) => outdatedGemini.includes(m));
+            const hasMissingNew = activeGeminiModels.some((m: string) => !parsed.text_model.models.includes(m));
+            if (hasOutdated || hasMissingNew) {
+              parsed.text_model.models = [
+                ...parsed.text_model.models.filter((m: string) => !outdatedGemini.includes(m)),
+                ...activeGeminiModels.filter((m: string) => !parsed.text_model.models.includes(m)),
+              ];
+              dirty = true;
+            }
+          }
+        }
+
+        const isOpenRouter = parsed.text_model?.provider_name?.toLowerCase() === "openrouter" ||
+                             parsed.text_model?.api_endpoint?.includes("openrouter.ai");
+        if (isOpenRouter) {
+          const freeOpenRouterModels = [
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "deepseek/deepseek-r1:free",
+            "qwen/qwen-2.5-coder-32b-instruct:free",
+            "mistralai/mistral-small-24b-instruct-2501:free",
+          ];
+          if (Array.isArray(parsed.text_model?.models)) {
+            const hasMissing = freeOpenRouterModels.some((m: string) => !parsed.text_model.models.includes(m));
+            if (hasMissing) {
+              parsed.text_model.models = [
+                ...parsed.text_model.models,
+                ...freeOpenRouterModels.filter((m: string) => !parsed.text_model.models.includes(m)),
+              ];
+              dirty = true;
+            }
+          }
+        }
+
         if (parsed.transcribe_model && parsed.transcribe_model.max_tokens === undefined) {
           parsed.transcribe_model.max_tokens = null;
           dirty = true;
