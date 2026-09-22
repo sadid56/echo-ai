@@ -60,7 +60,7 @@ impl OpenAiCompatibleProvider {
                     last_sent_native_tool_calls = false;
                     let mut extra_desc = String::new();
                     for tc in tool_calls {
-                        extra_desc.push_str(&format!("\n[Action: Called tool '{}' with arguments: {}]", tc.name, tc.arguments));
+                        extra_desc.push_str(&format!("\n(System: Previous turn invoked tool '{}' with: {})", tc.name, tc.arguments));
                     }
                     if let Some(content_str) = msg_obj["content"].as_str() {
                         msg_obj["content"] = json!(format!("{}{}", content_str, extra_desc));

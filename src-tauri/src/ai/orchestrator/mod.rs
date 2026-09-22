@@ -48,6 +48,11 @@ impl Orchestrator {
         if !system_prompt.contains("present the differences in a standard Git diff") {
             system_prompt.push_str(diff_rule);
         }
+
+        let tool_call_rule = "\n\nCRITICAL: Always use native function/tool calling to execute commands or tools. NEVER write '[Action: Called tool...]' or raw JSON tool calls as plain text in your response. Always invoke the real tool directly.";
+        if !system_prompt.contains("CRITICAL: Always use native function/tool calling") {
+            system_prompt.push_str(tool_call_rule);
+        }
         
         let local_search_rule = "\n\nIf the user asks you to locate, search for, or find local files, directories, or folders on their system, you MUST call 'execute_command' with a command like 'find /home -type d -name ... 2>/dev/null' or check the current path using 'execute_command' with 'pwd'. Never just write a text tutorial explaining how they can do it themselves.";
         if !system_prompt.contains("locate, search for, or find local files") {

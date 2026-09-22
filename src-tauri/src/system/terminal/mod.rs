@@ -11,6 +11,14 @@ fn truncate_string(s: &str, max_len: usize) -> String {
 }
 
 pub async fn execute_command(command: &str) -> Result<String, String> {
+    let working_dir = std::env::current_dir().ok().map(|p| {
+        if p.file_name().and_then(|n| n.to_str()) == Some("src-tauri") {
+            p.parent().map(|parent| parent.to_path_buf()).unwrap_or(p)
+        } else {
+            p
+        }
+    });
+
     #[cfg(target_os = "windows")]
     let mut cmd = Command::new("cmd");
     #[cfg(target_os = "windows")]
@@ -20,6 +28,10 @@ pub async fn execute_command(command: &str) -> Result<String, String> {
     let mut cmd = Command::new("sh");
     #[cfg(not(target_os = "windows"))]
     cmd.args(&["-c", command]);
+
+    if let Some(ref dir) = working_dir {
+        cmd.current_dir(dir);
+    }
 
     let output = cmd.output()
         .await
